@@ -29,6 +29,13 @@ enum update_status
 	UPDATE_ERROR
 };
 
+// Configuració de Box2D
+#define PIXELS_PER_METER 50.0f
+#define METER_PER_PIXEL 0.02f
+
+#define METERS_TO_PIXELS(m) ((int) floor(PIXELS_PER_METER * m))
+#define PIXELS_TO_METERS(p)  ((float) METER_PER_PIXEL * p)
+
 // Configuration -----------
 #define SCREEN_WIDTH		 1280
 #define SCREEN_HEIGHT		  720
