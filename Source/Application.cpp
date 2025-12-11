@@ -1,3 +1,5 @@
+#include "Globals.h"
+#include "Application.h"
 
 #include "Module.h"
 #include "ModuleWindow.h"
@@ -6,7 +8,7 @@
 #include "ModulePhysics.h"
 #include "ModuleGame.h"
 
-#include "Application.h"
+#include "raylib.h"
 
 Application::Application()
 {
@@ -16,19 +18,12 @@ Application::Application()
 	physics = new ModulePhysics(this);
 	scene_intro = new ModuleGame(this);
 
-	// The order of calls is very important!
-	// Modules will Init() Start() and Update in this order
-	// They will CleanUp() in reverse order
-
-	// Main Modules
 	AddModule(window);
 	AddModule(physics);
 	AddModule(audio);
-	
-	// Scenes
+
 	AddModule(scene_intro);
 
-	// Rendering happens at the end
 	AddModule(renderer);
 }
 
@@ -40,33 +35,30 @@ Application::~Application()
 		delete item;
 	}
 	list_modules.clear();
-	
+
 }
 
 bool Application::Init()
 {
 	bool ret = true;
 
-	// Call Init() in all modules
 	for (auto it = list_modules.begin(); it != list_modules.end() && ret; ++it)
 	{
 		Module* module = *it;
 		ret = module->Init();
 	}
 
-	// After all Init calls we call Start() in all modules
-	LOG("Application Start --------------");
+	LOG("Inici de l'aplicacio --------------");
 
 	for (auto it = list_modules.begin(); it != list_modules.end() && ret; ++it)
 	{
 		Module* module = *it;
 		ret = module->Start();
 	}
-	
+
 	return ret;
 }
 
-// Call PreUpdate, Update and PostUpdate on all modules
 update_status Application::Update()
 {
 	update_status ret = UPDATE_CONTINUE;
@@ -111,7 +103,7 @@ bool Application::CleanUp()
 		Module* item = *it;
 		ret = item->CleanUp();
 	}
-	
+
 	return ret;
 }
 

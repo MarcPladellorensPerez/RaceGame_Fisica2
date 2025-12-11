@@ -1,5 +1,5 @@
-#include "Application.h"
 #include "Globals.h"
+#include "Application.h"
 
 #include "raylib.h"
 
@@ -14,9 +14,9 @@ enum main_states
 	MAIN_EXIT
 };
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
-	LOG("Starting game '%s'...", TITLE);
+	LOG("Iniciant joc '%s'...", TITLE);
 
 	int main_return = EXIT_FAILURE;
 	main_states state = MAIN_CREATION;
@@ -28,23 +28,23 @@ int main(int argc, char ** argv)
 		{
 		case MAIN_CREATION:
 
-			LOG("-------------- Application Creation --------------");
+			LOG("-------------- Creacio de l'Aplicacio --------------");
 			App = new Application();
 			state = MAIN_START;
 			break;
 
 		case MAIN_START:
 
-			LOG("-------------- Application Init --------------");
+			LOG("-------------- Inicialitzacio de l'Aplicacio --------------");
 			if (App->Init() == false)
 			{
-				LOG("Application Init exits with ERROR");
+				LOG("L'inicialitzacio de l'aplicacio ha fallat");
 				state = MAIN_EXIT;
 			}
 			else
 			{
 				state = MAIN_UPDATE;
-				LOG("-------------- Application Update --------------");
+				LOG("-------------- Actualitzacio de l'Aplicacio --------------");
 			}
 
 			break;
@@ -55,21 +55,21 @@ int main(int argc, char ** argv)
 
 			if (update_return == UPDATE_ERROR)
 			{
-				LOG("Application Update exits with ERROR");
+				LOG("L'actualitzacio de l'aplicacio ha fallat");
 				state = MAIN_EXIT;
 			}
 
 			if (update_return == UPDATE_STOP)
 				state = MAIN_FINISH;
 		}
-			break;
+		break;
 
 		case MAIN_FINISH:
 
-			LOG("-------------- Application CleanUp --------------");
+			LOG("-------------- Neteja de l'Aplicacio --------------");
 			if (App->CleanUp() == false)
 			{
-				LOG("Application CleanUp exits with ERROR");
+				LOG("La neteja de l'aplicacio ha fallat");
 			}
 			else
 				main_return = EXIT_SUCCESS;
@@ -82,6 +82,6 @@ int main(int argc, char ** argv)
 	}
 
 	delete App;
-	LOG("Exiting game '%s'...\n", TITLE);
+	LOG("Sortint del joc '%s'...\n", TITLE);
 	return main_return;
 }
