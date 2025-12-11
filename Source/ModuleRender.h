@@ -21,8 +21,13 @@ public:
 	void SetBackgroundColor(Color color);
 	bool Draw(Texture2D texture, int x, int y, const Rectangle* section = NULL, double angle = 0, int pivot_x = 0, int pivot_y = 0) const;
 
+	void SetCameraPosition(float x, float y);
+	void CenterCameraOn(float x, float y);
+	void UpdateCamera(float target_x, float target_y, float smoothness = 0.1f);
+
 public:
 
 	Color background;
-	Rectangle camera;
+	float camera_x;
+	float camera_y;
 };

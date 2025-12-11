@@ -88,6 +88,9 @@ update_status ModulePhysics::PostUpdate()
 		int x, y;
 		body->GetPosition(x, y);
 
+		float cam_x = App->renderer->camera_x;
+		float cam_y = App->renderer->camera_y;
+
 		if (body->body->GetType() == b2_dynamicBody)
 		{
 			b2Fixture* fixture = body->body->GetFixtureList();
@@ -98,7 +101,8 @@ update_status ModulePhysics::PostUpdate()
 				case b2Shape::e_circle:
 				{
 					b2CircleShape* shape = (b2CircleShape*)fixture->GetShape();
-					DrawCircleLines(x, y, METERS_TO_PIXELS(shape->m_radius), RED);
+					DrawCircleLines((int)(x + cam_x), (int)(y + cam_y),
+						METERS_TO_PIXELS(shape->m_radius), RED);
 					shapes_drawn++;
 				}
 				break;
@@ -111,8 +115,10 @@ update_status ModulePhysics::PostUpdate()
 					for (int j = 0; j < count; ++j)
 					{
 						b2Vec2 v = body->body->GetWorldPoint(shape->m_vertices[j]);
-						DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y),
-							METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), RED);
+						DrawLine((int)(METERS_TO_PIXELS(prev.x) + cam_x),
+							(int)(METERS_TO_PIXELS(prev.y) + cam_y),
+							(int)(METERS_TO_PIXELS(v.x) + cam_x),
+							(int)(METERS_TO_PIXELS(v.y) + cam_y), RED);
 						prev = v;
 					}
 					shapes_drawn++;
@@ -127,8 +133,10 @@ update_status ModulePhysics::PostUpdate()
 					for (int j = 1; j < count; ++j)
 					{
 						b2Vec2 v = body->body->GetWorldPoint(shape->m_vertices[j]);
-						DrawLine(METERS_TO_PIXELS(prev.x), METERS_TO_PIXELS(prev.y),
-							METERS_TO_PIXELS(v.x), METERS_TO_PIXELS(v.y), GREEN);
+						DrawLine((int)(METERS_TO_PIXELS(prev.x) + cam_x),
+							(int)(METERS_TO_PIXELS(prev.y) + cam_y),
+							(int)(METERS_TO_PIXELS(v.x) + cam_x),
+							(int)(METERS_TO_PIXELS(v.y) + cam_y), GREEN);
 						prev = v;
 					}
 					shapes_drawn++;
@@ -146,7 +154,9 @@ update_status ModulePhysics::PostUpdate()
 	if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
 	{
 		Vector2 mouse_pos = GetMousePosition();
-		b2Vec2 p = { PIXELS_TO_METERS(mouse_pos.x), PIXELS_TO_METERS(mouse_pos.y) };
+		float world_x = mouse_pos.x - App->renderer->camera_x;
+		float world_y = mouse_pos.y - App->renderer->camera_y;
+		b2Vec2 p = { PIXELS_TO_METERS(world_x), PIXELS_TO_METERS(world_y) };
 
 		LOG("ModulePhysics: Click del ratoli a (%.1f %.1f)", mouse_pos.x, mouse_pos.y);
 
@@ -156,7 +166,7 @@ update_status ModulePhysics::PostUpdate()
 			for (size_t i = 0; i < bodies.size(); ++i)
 			{
 				PhysBody* body = bodies[i];
-				if (body->Contains((int)mouse_pos.x, (int)mouse_pos.y))
+				if (body->Contains((int)world_x, (int)world_y))
 				{
 					LOG("ModulePhysics: Cos fisic seleccionat! Creant mouse joint");
 
@@ -184,11 +194,14 @@ update_status ModulePhysics::PostUpdate()
 	if (mouse_joint && IsMouseButtonDown(MOUSE_LEFT_BUTTON))
 	{
 		Vector2 mouse_pos = GetMousePosition();
-		b2Vec2 mouse_position = { PIXELS_TO_METERS(mouse_pos.x), PIXELS_TO_METERS(mouse_pos.y) };
+		float world_x = mouse_pos.x - App->renderer->camera_x;
+		float world_y = mouse_pos.y - App->renderer->camera_y;
+		b2Vec2 mouse_position = { PIXELS_TO_METERS(world_x), PIXELS_TO_METERS(world_y) };
 		mouse_joint->SetTarget(mouse_position);
 
 		b2Vec2 anchor = mouse_joint->GetAnchorB();
-		DrawLine(METERS_TO_PIXELS(anchor.x), METERS_TO_PIXELS(anchor.y),
+		DrawLine((int)(METERS_TO_PIXELS(anchor.x) + App->renderer->camera_x),
+			(int)(METERS_TO_PIXELS(anchor.y) + App->renderer->camera_y),
 			(int)mouse_pos.x, (int)mouse_pos.y, RED);
 	}
 
