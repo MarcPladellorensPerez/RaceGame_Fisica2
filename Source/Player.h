@@ -2,13 +2,6 @@
 #include "Module.h"
 #include "Globals.h"
 #include "p2Point.h"
-#include "raylib.h"
-
-// Ignoramos warnings de Box2D para que no fallen al compilar
-#pragma warning(push)
-#pragma warning(disable : 26495)
-#include "ModulePhysics.h"
-#pragma warning(pop)
 
 class ModulePlayer : public Module
 {
@@ -21,6 +14,5 @@ public:
 	bool CleanUp();
 
 public:
-	PhysBody* vehicle;
-	Texture2D vehicle_texture;
+
 };

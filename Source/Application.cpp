@@ -1,12 +1,13 @@
 #include "Globals.h"
 #include "Application.h"
+
 #include "Module.h"
 #include "ModuleWindow.h"
 #include "ModuleRender.h"
 #include "ModuleAudio.h"
 #include "ModulePhysics.h"
 #include "ModuleGame.h"
-#include "Player.h" 
+
 #include "raylib.h"
 
 Application::Application()
@@ -16,13 +17,13 @@ Application::Application()
 	audio = new ModuleAudio(this, true);
 	physics = new ModulePhysics(this);
 	scene_intro = new ModuleGame(this);
-	player = new ModulePlayer(this);
 
 	AddModule(window);
 	AddModule(physics);
 	AddModule(audio);
+
 	AddModule(scene_intro);
-	AddModule(player);
+
 	AddModule(renderer);
 }
 
@@ -34,6 +35,7 @@ Application::~Application()
 		delete item;
 	}
 	list_modules.clear();
+
 }
 
 bool Application::Init()
@@ -45,6 +47,8 @@ bool Application::Init()
 		Module* module = *it;
 		ret = module->Init();
 	}
+
+	LOG("Inici de l'aplicacio --------------");
 
 	for (auto it = list_modules.begin(); it != list_modules.end() && ret; ++it)
 	{

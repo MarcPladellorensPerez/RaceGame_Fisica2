@@ -2,13 +2,15 @@
 
 #include "Globals.h"
 #include "Module.h"
+
 #include "p2Point.h"
+
 #include "raylib.h"
 #include <vector>
-#include <string>
 
 class PhysBody;
 class PhysicEntity;
+
 
 class ModuleGame : public Module
 {
@@ -21,11 +23,6 @@ public:
 	bool CleanUp();
 
 public:
-	Texture2D tile_set;
-	std::vector<int> map_data;
-	int map_width;
-	int map_height;
 
-private:
-	void LoadMap(const char* map_path);
+	
 };
