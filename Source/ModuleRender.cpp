@@ -19,9 +19,7 @@ ModuleRender::~ModuleRender()
 bool ModuleRender::Init()
 {
 	LOG("ModuleRender: Creant context de render");
-	bool ret = true;
-
-	return ret;
+	return true;
 }
 
 update_status ModuleRender::PreUpdate()
@@ -45,7 +43,6 @@ update_status ModuleRender::PostUpdate()
 		DrawText("MODE DEBUG ACTIVAT", 10, 40, 20, RED);
 		DrawText("Fes clic i arrossega els objectes!", 10, 65, 16, DARKGRAY);
 		DrawText("Prem F1 per desactivar", 10, 85, 16, DARKGRAY);
-
 		DrawText(TextFormat("Camera: (%.0f, %.0f)", camera_x, camera_y), 10, 110, 16, BLUE);
 	}
 	else
@@ -73,7 +70,6 @@ void ModuleRender::SetCameraPosition(float x, float y)
 {
 	camera_x = x;
 	camera_y = y;
-	LOG("ModuleRender: Camera posicionada a (%.2f, %.2f)", camera_x, camera_y);
 }
 
 void ModuleRender::CenterCameraOn(float x, float y)
@@ -93,24 +89,37 @@ void ModuleRender::UpdateCamera(float target_x, float target_y, float smoothness
 
 bool ModuleRender::Draw(Texture2D texture, int x, int y, const Rectangle* section, double angle, int pivot_x, int pivot_y) const
 {
-	bool ret = true;
-
-	float scale = 1.0f;
-	Vector2 position = { (float)x, (float)y };
-	Rectangle rect = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
-
-	if (section != NULL)
+	if (texture.id == 0)
 	{
-		rect = *section;
+		return false;
 	}
 
-	position.x = (float)(x - pivot_x) * scale + camera_x;
-	position.y = (float)(y - pivot_y) * scale + camera_y;
+	Rectangle source_rect;
+	if (section != NULL)
+	{
+		source_rect = *section;
+	}
+	else
+	{
+		source_rect = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
+	}
 
-	rect.width *= scale;
-	rect.height *= scale;
+	// Calculate screen position with camera
+	Vector2 screen_pos;
+	screen_pos.x = (float)x + camera_x;
+	screen_pos.y = (float)y + camera_y;
 
-	DrawTextureRec(texture, rect, position, WHITE);
+	// Rotation origin
+	Vector2 origin = { (float)pivot_x, (float)pivot_y };
 
-	return ret;
+	Rectangle dest_rect;
+	dest_rect.x = screen_pos.x;
+	dest_rect.y = screen_pos.y;
+	dest_rect.width = source_rect.width;
+	dest_rect.height = source_rect.height;
+
+	// Rotate texture
+	DrawTexturePro(texture, source_rect, dest_rect, origin, (float)angle, WHITE);
+
+	return true;
 }
