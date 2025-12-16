@@ -4,7 +4,7 @@
 #include "p2Point.h"
 #include "raylib.h"
 
-// Ignore Box2D warnings to prevent compilation failures
+// Ignore Box2D warnings
 #pragma warning(push)
 #pragma warning(disable : 26495)
 #include "ModulePhysics.h"
@@ -19,6 +19,9 @@ public:
 	bool Start();
 	update_status Update();
 	bool CleanUp();
+
+	// New method to teleport player to spawn point
+	void SetPosition(float x, float y);
 
 	// Nitro system methods
 	void UpdateNitro(float dt);
