@@ -42,8 +42,8 @@ bool ModulePlayer::Start()
 	LOG("ModulePlayer: Texture loaded successfully (%dx%d)", vehicle_texture.width, vehicle_texture.height);
 
 	// Create vehicle body at starting position
-	int start_x = 640;
-	int start_y = 360;
+	int start_x = 5208;
+	int start_y = 5826;
 
 	// Vehicle collider
 	vehicle = App->physics->CreateRectangle(start_x, start_y,
@@ -72,10 +72,11 @@ bool ModulePlayer::Start()
 		vehicle->body->ResetMassData();
 	}
 
-	LOG("ModulePlayer: Vehicle initialized successfully");
+	LOG("ModulePlayer: Vehicle initialized successfully at (%d, %d)", start_x, start_y);
 
 	return true;
 }
+
 
 bool ModulePlayer::CleanUp()
 {

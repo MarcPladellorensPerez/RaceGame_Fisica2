@@ -73,7 +73,7 @@
    <properties>
     <property name="grid_row" type="int" value="1"/>
     <property name="position" value="pole"/>
-    <property name="rotation" type="float" value="0"/>
+    <property name="rotation" type="float" value="-90"/>
     <property name="spawn_id" type="int" value="0"/>
    </properties>
    <point/>
@@ -82,7 +82,7 @@
    <properties>
     <property name="grid_row" type="int" value="2"/>
     <property name="position" value="second"/>
-    <property name="rotation" type="float" value="0"/>
+    <property name="rotation" type="float" value="-90"/>
     <property name="spawn_id" type="int" value="1"/>
    </properties>
    <point/>
@@ -91,7 +91,7 @@
    <properties>
     <property name="grid_row" type="int" value="1"/>
     <property name="position" value="third"/>
-    <property name="rotation" type="float" value="0"/>
+    <property name="rotation" type="float" value="-90"/>
     <property name="spawn_id" type="int" value="2"/>
    </properties>
    <point/>
@@ -100,7 +100,7 @@
    <properties>
     <property name="grid_row" type="int" value="2"/>
     <property name="position" value="fourth"/>
-    <property name="rotation" type="float" value="0"/>
+    <property name="rotation" type="float" value="-90"/>
     <property name="spawn_id" type="int" value="3"/>
    </properties>
    <point/>
@@ -109,7 +109,7 @@
    <properties>
     <property name="grid_row" type="int" value="1"/>
     <property name="position" value="fifth"/>
-    <property name="rotation" type="float" value="0"/>
+    <property name="rotation" type="float" value="-90"/>
     <property name="spawn_id" type="int" value="4"/>
    </properties>
    <point/>
@@ -128,7 +128,7 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup color="#cc0000" id="4" name="Collisions" visible="0" opacity="0.5">
+ <objectgroup color="#cc0000" id="4" name="Collisions" opacity="0.5">
   <object id="26" name="Exterior" x="7039.96" y="6124.13">
    <properties>
     <property name="collision_type" value="static"/>

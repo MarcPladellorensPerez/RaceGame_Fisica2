@@ -13,6 +13,8 @@ ModulePhysics::ModulePhysics(Application* app, bool start_enabled) : Module(app,
 {
 	world = nullptr;
 	mouse_joint = nullptr;
+	mouse_body = nullptr;
+	ground = nullptr;
 	debug = false;
 	LOG("ModulePhysics: Constructor cridat");
 }
@@ -81,84 +83,104 @@ update_status ModulePhysics::PostUpdate()
 	}
 
 	int shapes_drawn = 0;
+	float cam_x = App->renderer->camera_x;
+	float cam_y = App->renderer->camera_y;
 
+	// Draw all physics bodies
 	for (size_t i = 0; i < bodies.size(); ++i)
 	{
 		PhysBody* body = bodies[i];
 		int x, y;
 		body->GetPosition(x, y);
 
-		float cam_x = App->renderer->camera_x;
-		float cam_y = App->renderer->camera_y;
-
-		if (body->body->GetType() == b2_dynamicBody)
+		b2Fixture* fixture = body->body->GetFixtureList();
+		while (fixture != nullptr)
 		{
-			b2Fixture* fixture = body->body->GetFixtureList();
-			while (fixture != nullptr)
+			switch (fixture->GetShape()->GetType())
 			{
-				switch (fixture->GetShape()->GetType())
-				{
-				case b2Shape::e_circle:
-				{
-					b2CircleShape* shape = (b2CircleShape*)fixture->GetShape();
-					DrawCircleLines((int)(x + cam_x), (int)(y + cam_y),
-						METERS_TO_PIXELS(shape->m_radius), RED);
-					shapes_drawn++;
-				}
-				break;
-
-				case b2Shape::e_polygon:
-				{
-					b2PolygonShape* shape = (b2PolygonShape*)fixture->GetShape();
-					int count = shape->m_count;
-					b2Vec2 prev = body->body->GetWorldPoint(shape->m_vertices[count - 1]);
-					for (int j = 0; j < count; ++j)
-					{
-						b2Vec2 v = body->body->GetWorldPoint(shape->m_vertices[j]);
-						DrawLine((int)(METERS_TO_PIXELS(prev.x) + cam_x),
-							(int)(METERS_TO_PIXELS(prev.y) + cam_y),
-							(int)(METERS_TO_PIXELS(v.x) + cam_x),
-							(int)(METERS_TO_PIXELS(v.y) + cam_y), RED);
-						prev = v;
-					}
-					shapes_drawn++;
-				}
-				break;
-
-				case b2Shape::e_chain:
-				{
-					b2ChainShape* shape = (b2ChainShape*)fixture->GetShape();
-					int count = shape->m_count;
-					b2Vec2 prev = body->body->GetWorldPoint(shape->m_vertices[0]);
-					for (int j = 1; j < count; ++j)
-					{
-						b2Vec2 v = body->body->GetWorldPoint(shape->m_vertices[j]);
-						DrawLine((int)(METERS_TO_PIXELS(prev.x) + cam_x),
-							(int)(METERS_TO_PIXELS(prev.y) + cam_y),
-							(int)(METERS_TO_PIXELS(v.x) + cam_x),
-							(int)(METERS_TO_PIXELS(v.y) + cam_y), GREEN);
-						prev = v;
-					}
-					shapes_drawn++;
-				}
-				break;
-
-				default:
-					break;
-				}
-				fixture = fixture->GetNext();
+			case b2Shape::e_circle:
+			{
+				b2CircleShape* shape = (b2CircleShape*)fixture->GetShape();
+				b2Vec2 pos = body->body->GetPosition();
+				DrawCircleLines(
+					(int)(METERS_TO_PIXELS(pos.x) + cam_x),
+					(int)(METERS_TO_PIXELS(pos.y) + cam_y),
+					METERS_TO_PIXELS(shape->m_radius),
+					RED);
+				shapes_drawn++;
 			}
+			break;
+
+			case b2Shape::e_polygon:
+			{
+				b2PolygonShape* shape = (b2PolygonShape*)fixture->GetShape();
+				int count = shape->m_count;
+				b2Vec2 prev = body->body->GetWorldPoint(shape->m_vertices[count - 1]);
+
+				for (int j = 0; j < count; ++j)
+				{
+					b2Vec2 v = body->body->GetWorldPoint(shape->m_vertices[j]);
+					DrawLine(
+						(int)(METERS_TO_PIXELS(prev.x) + cam_x),
+						(int)(METERS_TO_PIXELS(prev.y) + cam_y),
+						(int)(METERS_TO_PIXELS(v.x) + cam_x),
+						(int)(METERS_TO_PIXELS(v.y) + cam_y),
+						RED);
+					prev = v;
+				}
+				shapes_drawn++;
+			}
+			break;
+
+			case b2Shape::e_chain:
+			{
+				b2ChainShape* shape = (b2ChainShape*)fixture->GetShape();
+				int count = shape->m_count;
+
+				// Draw chain segments
+				for (int j = 0; j < count - 1; ++j)
+				{
+					b2Vec2 v1 = body->body->GetWorldPoint(shape->m_vertices[j]);
+					b2Vec2 v2 = body->body->GetWorldPoint(shape->m_vertices[j + 1]);
+
+					DrawLineEx(
+						Vector2{ METERS_TO_PIXELS(v1.x) + cam_x, METERS_TO_PIXELS(v1.y) + cam_y },
+						Vector2{ METERS_TO_PIXELS(v2.x) + cam_x, METERS_TO_PIXELS(v2.y) + cam_y },
+						3.0f,
+						GREEN);
+				}
+
+				// Close loop if necessary
+				if (count > 0)
+				{
+					b2Vec2 v_last = body->body->GetWorldPoint(shape->m_vertices[count - 1]);
+					b2Vec2 v_first = body->body->GetWorldPoint(shape->m_vertices[0]);
+
+					DrawLineEx(
+						Vector2{ METERS_TO_PIXELS(v_last.x) + cam_x, METERS_TO_PIXELS(v_last.y) + cam_y },
+						Vector2{ METERS_TO_PIXELS(v_first.x) + cam_x, METERS_TO_PIXELS(v_first.y) + cam_y },
+						3.0f,
+						GREEN);
+				}
+
+				shapes_drawn++;
+			}
+			break;
+
+			default:
+				break;
+			}
+			fixture = fixture->GetNext();
 		}
 	}
 
+	// Mouse joint (debug)
 	if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
 	{
 		Vector2 mouse_pos = GetMousePosition();
-		float world_x = mouse_pos.x - App->renderer->camera_x;
-		float world_y = mouse_pos.y - App->renderer->camera_y;
+		float world_x = mouse_pos.x - cam_x;
+		float world_y = mouse_pos.y - cam_y;
 		b2Vec2 p = { PIXELS_TO_METERS(world_x), PIXELS_TO_METERS(world_y) };
-
-		LOG("ModulePhysics: Click del ratoli a (%.1f %.1f)", mouse_pos.x, mouse_pos.y);
 
 		if (mouse_joint == nullptr)
 		{
@@ -166,6 +188,8 @@ update_status ModulePhysics::PostUpdate()
 			for (size_t i = 0; i < bodies.size(); ++i)
 			{
 				PhysBody* body = bodies[i];
+				if (body->body->GetType() != b2_dynamicBody) continue;
+
 				if (body->Contains((int)world_x, (int)world_y))
 				{
 					LOG("ModulePhysics: Cos fisic seleccionat! Creant mouse joint");
@@ -183,26 +207,23 @@ update_status ModulePhysics::PostUpdate()
 					break;
 				}
 			}
-
-			if (!body_found)
-			{
-				LOG("ModulePhysics: Cap cos fisic trobat en aquesta posicio");
-			}
 		}
 	}
 
 	if (mouse_joint && IsMouseButtonDown(MOUSE_LEFT_BUTTON))
 	{
 		Vector2 mouse_pos = GetMousePosition();
-		float world_x = mouse_pos.x - App->renderer->camera_x;
-		float world_y = mouse_pos.y - App->renderer->camera_y;
+		float world_x = mouse_pos.x - cam_x;
+		float world_y = mouse_pos.y - cam_y;
 		b2Vec2 mouse_position = { PIXELS_TO_METERS(world_x), PIXELS_TO_METERS(world_y) };
 		mouse_joint->SetTarget(mouse_position);
 
 		b2Vec2 anchor = mouse_joint->GetAnchorB();
-		DrawLine((int)(METERS_TO_PIXELS(anchor.x) + App->renderer->camera_x),
-			(int)(METERS_TO_PIXELS(anchor.y) + App->renderer->camera_y),
-			(int)mouse_pos.x, (int)mouse_pos.y, RED);
+		DrawLine(
+			(int)(METERS_TO_PIXELS(anchor.x) + cam_x),
+			(int)(METERS_TO_PIXELS(anchor.y) + cam_y),
+			(int)mouse_pos.x, (int)mouse_pos.y,
+			RED);
 	}
 
 	if (mouse_joint && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
@@ -251,7 +272,7 @@ void ModulePhysics::BeginContact(b2Contact* contact)
 PhysBody* ModulePhysics::CreateCircle(int x, int y, int radius, PhysBodyType type)
 {
 	b2BodyDef body_def;
-	body_def.position.Set(PIXELS_TO_METERS(x), PIXELS_TO_METERS(y));
+	body_def.position.Set(PIXELS_TO_METERS((float)x), PIXELS_TO_METERS((float)y));
 
 	switch (type)
 	{
@@ -269,7 +290,7 @@ PhysBody* ModulePhysics::CreateCircle(int x, int y, int radius, PhysBodyType typ
 	b2Body* body = world->CreateBody(&body_def);
 
 	b2CircleShape shape;
-	shape.m_radius = PIXELS_TO_METERS(radius);
+	shape.m_radius = PIXELS_TO_METERS((float)radius);
 
 	b2FixtureDef fixture_def;
 	fixture_def.shape = &shape;
@@ -293,7 +314,7 @@ PhysBody* ModulePhysics::CreateCircle(int x, int y, int radius, PhysBodyType typ
 PhysBody* ModulePhysics::CreateRectangle(int x, int y, int width, int height, PhysBodyType type)
 {
 	b2BodyDef body_def;
-	body_def.position.Set(PIXELS_TO_METERS(x), PIXELS_TO_METERS(y));
+	body_def.position.Set(PIXELS_TO_METERS((float)x), PIXELS_TO_METERS((float)y));
 
 	switch (type)
 	{
@@ -311,7 +332,7 @@ PhysBody* ModulePhysics::CreateRectangle(int x, int y, int width, int height, Ph
 	b2Body* body = world->CreateBody(&body_def);
 
 	b2PolygonShape box;
-	box.SetAsBox(PIXELS_TO_METERS(width) * 0.5f, PIXELS_TO_METERS(height) * 0.5f);
+	box.SetAsBox(PIXELS_TO_METERS((float)width) * 0.5f, PIXELS_TO_METERS((float)height) * 0.5f);
 
 	b2FixtureDef fixture_def;
 	fixture_def.shape = &box;
@@ -335,13 +356,13 @@ PhysBody* ModulePhysics::CreateRectangle(int x, int y, int width, int height, Ph
 PhysBody* ModulePhysics::CreateRectangleSensor(int x, int y, int width, int height)
 {
 	b2BodyDef body_def;
-	body_def.position.Set(PIXELS_TO_METERS(x), PIXELS_TO_METERS(y));
+	body_def.position.Set(PIXELS_TO_METERS((float)x), PIXELS_TO_METERS((float)y));
 	body_def.type = b2_staticBody;
 
 	b2Body* body = world->CreateBody(&body_def);
 
 	b2PolygonShape box;
-	box.SetAsBox(PIXELS_TO_METERS(width) * 0.5f, PIXELS_TO_METERS(height) * 0.5f);
+	box.SetAsBox(PIXELS_TO_METERS((float)width) * 0.5f, PIXELS_TO_METERS((float)height) * 0.5f);
 
 	b2FixtureDef fixture_def;
 	fixture_def.shape = &box;
@@ -365,8 +386,14 @@ PhysBody* ModulePhysics::CreateRectangleSensor(int x, int y, int width, int heig
 
 PhysBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size, PhysBodyType type)
 {
+	if (points == nullptr || size < 6)
+	{
+		LOG("ERROR: CreateChain cridat amb punts nulls o tamany incorrecte (size=%d, minim=6)", size);
+		return nullptr;
+	}
+
 	b2BodyDef body_def;
-	body_def.position.Set(PIXELS_TO_METERS(x), PIXELS_TO_METERS(y));
+	body_def.position.Set(PIXELS_TO_METERS((float)x), PIXELS_TO_METERS((float)y));
 
 	switch (type)
 	{
@@ -384,18 +411,60 @@ PhysBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size, 
 	b2Body* body = world->CreateBody(&body_def);
 
 	b2ChainShape shape;
-	b2Vec2* p = new b2Vec2[size / 2];
+	int num_vertices = size / 2;
+	b2Vec2* p = new b2Vec2[num_vertices];
 
-	for (int i = 0; i < size / 2; ++i)
+	// Convert points from pixels to meters
+	for (int i = 0; i < num_vertices; ++i)
 	{
-		p[i].x = PIXELS_TO_METERS(points[i * 2 + 0]);
-		p[i].y = PIXELS_TO_METERS(points[i * 2 + 1]);
+		p[i].x = PIXELS_TO_METERS((float)points[i * 2 + 0]);
+		p[i].y = PIXELS_TO_METERS((float)points[i * 2 + 1]);
 	}
 
-	shape.CreateLoop(p, size / 2);
+	// Verify that no two consecutive vertices are too close
+	const float MIN_VERTEX_DISTANCE = 0.005f;
+	bool has_close_vertices = false;
+
+	for (int i = 0; i < num_vertices; ++i)
+	{
+		int next = (i + 1) % num_vertices;
+		b2Vec2 diff = p[next] - p[i];
+		float dist_sq = diff.x * diff.x + diff.y * diff.y;
+		float min_dist_sq = MIN_VERTEX_DISTANCE * MIN_VERTEX_DISTANCE;
+
+		if (dist_sq < min_dist_sq)
+		{
+			LOG("ERROR: Vertexs %d i %d massa propers! Distancia: %.6f metres (minim: %.6f)",
+				i, next, sqrtf(dist_sq), MIN_VERTEX_DISTANCE);
+			has_close_vertices = true;
+		}
+	}
+
+	if (has_close_vertices)
+	{
+		delete[] p;
+		world->DestroyBody(body);
+		LOG("ERROR: CreateChain fallat - vertexs massa propers detectats");
+		return nullptr;
+	}
+
+	// Create the chain shape
+	try
+	{
+		shape.CreateLoop(p, num_vertices);
+	}
+	catch (...)
+	{
+		LOG("ERROR: Exception en CreateLoop de Box2D");
+		delete[] p;
+		world->DestroyBody(body);
+		return nullptr;
+	}
 
 	b2FixtureDef fixture_def;
 	fixture_def.shape = &shape;
+	fixture_def.friction = 0.5f;
+	fixture_def.restitution = 0.0f;
 
 	body->CreateFixture(&fixture_def);
 
@@ -409,12 +478,12 @@ PhysBody* ModulePhysics::CreateChain(int x, int y, const int* points, int size, 
 
 	bodies.push_back(pbody);
 
-	LOG("ModulePhysics: Cadena creada a (%d %d) amb %d punts", x, y, size / 2);
+	LOG("ModulePhysics: Cadena creada a (%d %d) amb %d punts", x, y, num_vertices);
 
 	return pbody;
 }
 
-PhysBody::PhysBody() : listener(nullptr), body(nullptr)
+PhysBody::PhysBody() : listener(nullptr), body(nullptr), width(0), height(0)
 {
 }
 
@@ -436,7 +505,7 @@ float PhysBody::GetRotation() const
 
 bool PhysBody::Contains(int x, int y) const
 {
-	b2Vec2 p(PIXELS_TO_METERS(x), PIXELS_TO_METERS(y));
+	b2Vec2 p(PIXELS_TO_METERS((float)x), PIXELS_TO_METERS((float)y));
 
 	const b2Fixture* fixture = body->GetFixtureList();
 
@@ -459,8 +528,8 @@ int PhysBody::RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& no
 	b2RayCastInput input;
 	b2RayCastOutput output;
 
-	input.p1.Set(PIXELS_TO_METERS(x1), PIXELS_TO_METERS(y1));
-	input.p2.Set(PIXELS_TO_METERS(x2), PIXELS_TO_METERS(y2));
+	input.p1.Set(PIXELS_TO_METERS((float)x1), PIXELS_TO_METERS((float)y1));
+	input.p2.Set(PIXELS_TO_METERS((float)x2), PIXELS_TO_METERS((float)y2));
 	input.maxFraction = 1.0f;
 
 	const b2Fixture* fixture = body->GetFixtureList();

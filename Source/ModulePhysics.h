@@ -38,9 +38,10 @@ public:
 	int RayCast(int x1, int y1, int x2, int y2, float& normal_x, float& normal_y) const;
 
 public:
-	int width, height;
-	b2Body* body;
-	Module* listener;
+	int width = 0;
+	int height = 0;
+	b2Body* body = nullptr;
+	Module* listener = nullptr;
 };
 
 class ModulePhysics : public Module, public b2ContactListener
@@ -66,10 +67,10 @@ public:
 	bool debug;
 
 private:
-	b2World* world;
-	b2Body* ground;
-	b2MouseJoint* mouse_joint;
-	b2Body* mouse_body;
+	b2World* world = nullptr;
+	b2Body* ground = nullptr;
+	b2MouseJoint* mouse_joint = nullptr;
+	b2Body* mouse_body = nullptr;
 
 	std::vector<PhysBody*> bodies;
 };
