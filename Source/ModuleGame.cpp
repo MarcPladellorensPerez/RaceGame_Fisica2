@@ -4,17 +4,20 @@
 #include "ModuleGame.h"
 #include "ModuleAudio.h"
 #include "ModulePhysics.h"
+#include "Player.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <random>
 
 ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start_enabled)
 {
 	map_width = 0;
 	map_height = 0;
 	tile_set = { 0 };
+	game_started = false;
 }
 
 ModuleGame::~ModuleGame()
@@ -35,11 +38,22 @@ bool ModuleGame::Start()
 		return false;
 	}
 
+	char path[256];
+	for (int i = 2; i <= 8; ++i) {
+		sprintf_s(path, "Assets/Textures/Cars/car%d.png", i);
+		Texture2D tex = LoadTexture(path);
+		if (tex.id != 0) {
+			ai_car_textures.push_back(tex);
+		}
+	}
+
 	LoadMap("Assets/Map/RaceTrack.tmx");
 	LoadCollisions("Assets/Map/RaceTrack.tmx");
+	LoadMapObjects("Assets/Map/RaceTrack.tmx");
+
 	CreateCollisionBodies();
 
-	LOG("ModuleGame: Mapa carregat correctament amb %d objectes de col·lisio", (int)collision_objects.size());
+	LOG("ModuleGame: Mapa carregat correctament.");
 
 	return ret;
 }
@@ -47,6 +61,19 @@ bool ModuleGame::Start()
 bool ModuleGame::CleanUp()
 {
 	UnloadTexture(tile_set);
+
+	for (auto& tex : ai_car_textures) {
+		UnloadTexture(tex);
+	}
+	ai_car_textures.clear();
+
+	for (auto* vehicle : ai_vehicles) {
+		delete vehicle;
+	}
+	ai_vehicles.clear();
+
+	waypoints.clear();
+	spawn_points.clear();
 	map_data.clear();
 	collision_objects.clear();
 	collision_bodies.clear();
@@ -55,6 +82,11 @@ bool ModuleGame::CleanUp()
 
 update_status ModuleGame::Update()
 {
+	if (!game_started) {
+		CreateEnemiesAndPlayer();
+		game_started = true;
+	}
+
 	int tile_size = 128;
 	int columns = 18;
 
@@ -75,7 +107,149 @@ update_status ModuleGame::Update()
 		}
 	}
 
+	float dt = GetFrameTime();
+	for (auto* vehicle : ai_vehicles) {
+		vehicle->Update(dt, waypoints);
+		vehicle->Draw(App->physics->debug);
+	}
+
 	return UPDATE_CONTINUE;
+}
+
+std::vector<std::string> SplitString(const std::string& s, char delimiter) {
+	std::vector<std::string> tokens;
+	std::string token;
+	std::istringstream tokenStream(s);
+	while (std::getline(tokenStream, token, delimiter)) {
+		token.erase(remove(token.begin(), token.end(), ' '), token.end());
+		if (!token.empty()) tokens.push_back(token);
+	}
+	return tokens;
+}
+
+void ModuleGame::LoadMapObjects(const char* map_path)
+{
+	std::ifstream file(map_path);
+	if (!file.is_open()) return;
+
+	std::string line;
+	bool in_spawns = false;
+	bool in_waypoints = false;
+	bool in_object = false;
+
+	b2Vec2 tempPos(0, 0);
+	int tempId = -1;
+	std::vector<int> tempNextIds;
+
+	while (std::getline(file, line))
+	{
+		if (line.find("name=\"SpawnPoints\"") != std::string::npos) in_spawns = true;
+		if (line.find("name=\"AI_Waypoints\"") != std::string::npos) in_waypoints = true;
+
+		if (line.find("</objectgroup>") != std::string::npos) {
+			in_spawns = false;
+			in_waypoints = false;
+		}
+
+		if (!in_spawns && !in_waypoints) continue;
+
+		if (line.find("<object") != std::string::npos) {
+			in_object = true;
+			tempPos.SetZero();
+			tempId = -1;
+			tempNextIds.clear();
+
+			size_t x_pos = line.find("x=\"");
+			if (x_pos != std::string::npos) {
+				size_t start = x_pos + 3;
+				tempPos.x = std::stof(line.substr(start, line.find("\"", start) - start));
+			}
+			size_t y_pos = line.find("y=\"");
+			if (y_pos != std::string::npos) {
+				size_t start = y_pos + 3;
+				tempPos.y = std::stof(line.substr(start, line.find("\"", start) - start));
+			}
+		}
+
+		if (in_object && line.find("<property") != std::string::npos) {
+			if (line.find("name=\"checkpoint_id\"") != std::string::npos || line.find("name=\"spawn_id\"") != std::string::npos || line.find("name=\"id\"") != std::string::npos) {
+				size_t val_pos = line.find("value=\"");
+				if (val_pos != std::string::npos) {
+					size_t start = val_pos + 7;
+					try { tempId = std::stoi(line.substr(start, line.find("\"", start) - start)); }
+					catch (...) {}
+				}
+			}
+			if (line.find("name=\"next_ids\"") != std::string::npos) {
+				size_t val_pos = line.find("value=\"");
+				if (val_pos != std::string::npos) {
+					size_t start = val_pos + 7;
+					std::string raw = line.substr(start, line.find("\"", start) - start);
+					auto tokens = SplitString(raw, ',');
+					for (const auto& t : tokens) {
+						try { tempNextIds.push_back(std::stoi(t)); }
+						catch (...) {}
+					}
+				}
+			}
+		}
+
+		if (in_object && line.find("</object>") != std::string::npos) {
+			in_object = false;
+
+			if (in_spawns) {
+				spawn_points.push_back(tempPos);
+			}
+			if (in_waypoints && tempId != -1) {
+				Waypoint wp;
+				wp.id = tempId;
+				wp.position = b2Vec2(PIXELS_TO_METERS(tempPos.x), PIXELS_TO_METERS(tempPos.y));
+				wp.next_ids = tempNextIds;
+				waypoints.push_back(wp);
+			}
+		}
+	}
+	file.close();
+}
+
+void ModuleGame::CreateEnemiesAndPlayer()
+{
+	if (spawn_points.empty()) {
+		LOG("ERROR: No spawn points loaded!");
+		return;
+	}
+
+	std::random_device rd;
+	std::mt19937 g(rd());
+	std::shuffle(spawn_points.begin(), spawn_points.end(), g);
+
+	if (App->player != nullptr && App->player->vehicle != nullptr) {
+		App->player->SetPosition(spawn_points[0].x, spawn_points[0].y);
+		LOG("Player teleported to spawn: %.2f, %.2f", spawn_points[0].x, spawn_points[0].y);
+	}
+	else {
+		LOG("ERROR: Player vehicle not ready during spawn assignment!");
+	}
+
+	for (size_t i = 1; i < spawn_points.size(); ++i) {
+		AIVehicle* newAI = new AIVehicle();
+
+		Texture2D tex;
+		if (!ai_car_textures.empty()) {
+			tex = ai_car_textures[rand() % ai_car_textures.size()];
+		}
+		else {
+			tex = App->player->vehicle_texture;
+		}
+
+		int startWP = rand() % 4;
+		b2Vec2 spawnPosMeters(PIXELS_TO_METERS(spawn_points[i].x), PIXELS_TO_METERS(spawn_points[i].y));
+
+		newAI->Init(App->physics->GetWorld(), spawnPosMeters, tex, startWP);
+		ai_vehicles.push_back(newAI);
+
+		LOG("AIVehicle created at spawn %d", (int)i);
+	}
 }
 
 void ModuleGame::LoadMap(const char* map_path)
@@ -136,35 +310,28 @@ void ModuleGame::LoadCollisions(const char* map_path)
 	bool in_polygon = false;
 
 	CollisionObject current_object;
-	std::string current_property_name;
 
 	while (std::getline(file, line))
 	{
-		// Detect collision layer
 		if (line.find("name=\"Collisions\"") != std::string::npos)
 		{
 			in_collisions_layer = true;
-			LOG("ModuleGame: Trobada capa de col·lisions");
 			continue;
 		}
 
-		// Exit collision layer
 		if (in_collisions_layer && line.find("</objectgroup>") != std::string::npos)
 		{
 			in_collisions_layer = false;
-			LOG("ModuleGame: Fi de la capa de col·lisions");
 			break;
 		}
 
 		if (!in_collisions_layer) continue;
 
-		// Detect object start
 		if (line.find("<object") != std::string::npos)
 		{
 			in_object = true;
 			current_object = CollisionObject();
 
-			// Name if available
 			size_t name_pos = line.find("name=\"");
 			if (name_pos != std::string::npos)
 			{
@@ -173,7 +340,6 @@ void ModuleGame::LoadCollisions(const char* map_path)
 				current_object.name = line.substr(name_start, name_end - name_start);
 			}
 
-			// Object X position
 			size_t x_pos = line.find("x=\"");
 			if (x_pos != std::string::npos)
 			{
@@ -185,7 +351,6 @@ void ModuleGame::LoadCollisions(const char* map_path)
 				catch (...) {}
 			}
 
-			// Object Y position
 			size_t y_pos = line.find("y=\"");
 			if (y_pos != std::string::npos)
 			{
@@ -198,7 +363,6 @@ void ModuleGame::LoadCollisions(const char* map_path)
 			}
 		}
 
-		// Process properties
 		if (in_object && line.find("<property") != std::string::npos)
 		{
 			size_t name_pos = line.find("name=\"");
@@ -225,12 +389,10 @@ void ModuleGame::LoadCollisions(const char* map_path)
 			}
 		}
 
-		// Detect polygon
 		if (in_object && line.find("<polygon") != std::string::npos)
 		{
 			in_polygon = true;
 
-			// Extract polygon points
 			size_t points_pos = line.find("points=\"");
 			if (points_pos != std::string::npos)
 			{
@@ -238,7 +400,6 @@ void ModuleGame::LoadCollisions(const char* map_path)
 				size_t points_end = line.find("\"", points_start);
 				std::string points_str = line.substr(points_start, points_end - points_start);
 
-				// Parse points
 				std::stringstream ss(points_str);
 				std::string pair;
 
@@ -262,25 +423,19 @@ void ModuleGame::LoadCollisions(const char* map_path)
 			}
 		}
 
-		// End of the object
 		if (in_object && line.find("</object>") != std::string::npos)
 		{
 			in_object = false;
 			in_polygon = false;
 
-			// Only add if valid and of correct type
 			if (!current_object.points.empty() && current_object.type == "wall_chain")
 			{
 				collision_objects.push_back(current_object);
-				LOG("ModuleGame: Col·lisio carregada '%s' amb %d punts a offset (%d, %d)",
-					current_object.name.c_str(), (int)current_object.points.size(),
-					current_object.offset_x, current_object.offset_y);
 			}
 		}
 	}
 
 	file.close();
-	LOG("ModuleGame: Total de col·lisions carregades: %d", (int)collision_objects.size());
 }
 
 void ModuleGame::CreateCollisionBodies()
@@ -289,13 +444,8 @@ void ModuleGame::CreateCollisionBodies()
 
 	for (const auto& collision : collision_objects)
 	{
-		if (collision.points.size() < 2)
-		{
-			LOG("WARNING: Objecte '%s' te menys de 2 punts, s'ignora", collision.name.c_str());
-			continue;
-		}
+		if (collision.points.size() < 2) continue;
 
-		// Apply offset
 		std::vector<vec2i> absolute_points;
 		absolute_points.reserve(collision.points.size());
 
@@ -307,14 +457,11 @@ void ModuleGame::CreateCollisionBodies()
 			absolute_points.push_back(absolute_point);
 		}
 
-		// We invert order in "Exterior"
 		if (collision.name == "Exterior")
 		{
 			std::reverse(absolute_points.begin(), absolute_points.end());
-			LOG("ModuleGame: Ordre de punts invertit per '%s'", collision.name.c_str());
 		}
 
-		// Delete points that are too close
 		std::vector<vec2i> filtered_points;
 		filtered_points.push_back(absolute_points[0]);
 
@@ -323,19 +470,16 @@ void ModuleGame::CreateCollisionBodies()
 			const vec2i& current = absolute_points[i];
 			const vec2i& last_added = filtered_points.back();
 
-			// Cakculate squared distance
 			int dx = current.x - last_added.x;
 			int dy = current.y - last_added.y;
 			float dist_sq = (float)(dx * dx + dy * dy);
 
-			// Only add if far enough
 			if (dist_sq >= MIN_DISTANCE_SQ)
 			{
 				filtered_points.push_back(current);
 			}
 		}
 
-		// Verify distance between first and last point
 		if (filtered_points.size() > 1)
 		{
 			const vec2i& first = filtered_points.front();
@@ -351,15 +495,8 @@ void ModuleGame::CreateCollisionBodies()
 			}
 		}
 
-		// Validate final number of points
-		if (filtered_points.size() < 3)
-		{
-			LOG("WARNING: Objecte '%s' te menys de 3 punts valids despres del filtre (%d), s'ignora",
-				collision.name.c_str(), (int)filtered_points.size());
-			continue;
-		}
+		if (filtered_points.size() < 3) continue;
 
-		// Convert to array of ints
 		std::vector<int> points_array;
 		points_array.reserve(filtered_points.size() * 2);
 
@@ -369,7 +506,6 @@ void ModuleGame::CreateCollisionBodies()
 			points_array.push_back(filtered_points[i].y);
 		}
 
-		// Create chain physics body
 		PhysBody* body = App->physics->CreateChain(
 			0, 0,
 			points_array.data(),
@@ -380,15 +516,6 @@ void ModuleGame::CreateCollisionBodies()
 		if (body != nullptr)
 		{
 			collision_bodies.push_back(body);
-			LOG("ModuleGame: Chain creada per '%s' amb %d punts filtrats (original: %d) a posicio (%d,%d)",
-				collision.name.c_str(), (int)filtered_points.size(), (int)collision.points.size(),
-				collision.offset_x, collision.offset_y);
-		}
-		else
-		{
-			LOG("ERROR: No s'ha pogut crear chain per '%s'", collision.name.c_str());
 		}
 	}
-
-	LOG("ModuleGame: %d collision bodies creats correctament", (int)collision_bodies.size());
 }

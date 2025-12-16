@@ -116,7 +116,7 @@
   </object>
  </objectgroup>
  <objectgroup color="#ff0000" id="10" name="FinishLine">
-  <object id="38" x="4958.45" y="5652" width="471.73" height="59.27" rotation="90">
+  <object id="38" name="FinishLine" x="4958.45" y="5652" width="471.73" height="59.27" rotation="90">
    <properties>
     <property name="checkpoint_id" type="int" value="-1"/>
     <property name="direction" value="up"/>

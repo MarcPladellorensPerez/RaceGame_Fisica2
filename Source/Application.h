@@ -49,3 +49,7 @@ private:
 
 	void AddModule(Module* module);
 };
+
+// Esta linea permite que todos los archivos que incluyan Application.h 
+// sepan que existe la variable global 'App'
+extern Application* App;
