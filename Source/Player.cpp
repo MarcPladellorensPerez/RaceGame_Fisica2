@@ -70,14 +70,16 @@ bool ModulePlayer::Start()
 	return true;
 }
 
-void ModulePlayer::SetPosition(float x, float y)
+void ModulePlayer::SetPosition(float x, float y, float rotation_degrees)
 {
 	if (vehicle && vehicle->body)
 	{
-		float angle = vehicle->body->GetAngle();
+		// Convert degrees to radians for Box2D
+		float angle_radians = rotation_degrees * DEG_TO_RAD;
+
 		vehicle->body->SetLinearVelocity(b2Vec2(0, 0));
 		vehicle->body->SetAngularVelocity(0);
-		vehicle->body->SetTransform(b2Vec2(PIXELS_TO_METERS(x), PIXELS_TO_METERS(y)), angle);
+		vehicle->body->SetTransform(b2Vec2(PIXELS_TO_METERS(x), PIXELS_TO_METERS(y)), angle_radians);
 	}
 }
 

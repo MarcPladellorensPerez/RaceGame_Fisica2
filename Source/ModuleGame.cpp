@@ -224,7 +224,7 @@ void ModuleGame::CreateEnemiesAndPlayer()
 	std::shuffle(spawn_points.begin(), spawn_points.end(), g);
 
 	if (App->player != nullptr && App->player->vehicle != nullptr) {
-		App->player->SetPosition(spawn_points[0].x, spawn_points[0].y);
+		App->player->SetPosition(spawn_points[0].x, spawn_points[0].y, -90.0f);
 		LOG("Player teleported to spawn: %.2f, %.2f", spawn_points[0].x, spawn_points[0].y);
 	}
 	else {
