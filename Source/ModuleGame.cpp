@@ -18,6 +18,10 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	map_height = 0;
 	tile_set = { 0 };
 	game_started = false;
+
+	// start menu variables
+	show_menu = true;
+	start_menu_texture = { 0 };
 }
 
 ModuleGame::~ModuleGame()
@@ -29,6 +33,18 @@ bool ModuleGame::Start()
 	bool ret = true;
 
 	LOG("ModuleGame: Carregant recursos del mapa...");
+
+	// Load start menu texture
+	start_menu_texture = LoadTexture("Assets/Textures/UI/StartMenu.png");
+
+	if (start_menu_texture.id == 0)
+	{
+		LOG("WARNING: Could not load start menu texture, using text menu");
+	}
+	else
+	{
+		LOG("Start menu texture loaded successfully!");
+	}
 
 	tile_set = LoadTexture("Assets/Map/spritesheet_tiles.png");
 
@@ -60,6 +76,12 @@ bool ModuleGame::Start()
 
 bool ModuleGame::CleanUp()
 {
+	// Clean start menu texture
+	if (start_menu_texture.id != 0)
+	{
+		UnloadTexture(start_menu_texture);
+	}
+
 	UnloadTexture(tile_set);
 
 	for (auto& tex : ai_car_textures) {
@@ -82,6 +104,60 @@ bool ModuleGame::CleanUp()
 
 update_status ModuleGame::Update()
 {
+	if (show_menu)
+	{
+		// Restart camera position
+		App->renderer->camera_x = 0;
+		App->renderer->camera_y = 0;
+
+		// Clear screen
+		ClearBackground(BLACK);
+
+		// Draw start menu
+		if (start_menu_texture.id != 0)
+		{
+			// Calculete scaling to fit screen while maintaining aspect ratio
+			float scale_x = (float)SCREEN_WIDTH / start_menu_texture.width;
+			float scale_y = (float)SCREEN_HEIGHT / start_menu_texture.height;
+			float scale = fminf(scale_x, scale_y);
+
+			int img_width = (int)(start_menu_texture.width * scale);
+			int img_height = (int)(start_menu_texture.height * scale);
+			int pos_x = (SCREEN_WIDTH - img_width) / 2;
+			int pos_y = (SCREEN_HEIGHT - img_height) / 2;
+
+			Rectangle source = { 0, 0, (float)start_menu_texture.width, (float)start_menu_texture.height };
+			Rectangle dest = { (float)pos_x, (float)pos_y, (float)img_width, (float)img_height };
+			Vector2 origin = { 0, 0 };
+
+			DrawTexturePro(start_menu_texture, source, dest, origin, 0.0f, WHITE);
+		}
+		else
+		{
+			// Text menu fallback
+			const char* title = "RACING GAME";
+			const char* subtitle = "Physics II Project";
+			const char* instruction = "Press SPACE to Start";
+
+			int title_width = MeasureText(title, 80);
+			int subtitle_width = MeasureText(subtitle, 30);
+			int instruction_width = MeasureText(instruction, 40);
+
+			DrawText(title, (SCREEN_WIDTH - title_width) / 2, 200, 80, YELLOW);
+			DrawText(subtitle, (SCREEN_WIDTH - subtitle_width) / 2, 300, 30, LIGHTGRAY);
+
+		}
+
+		// Start game on space key press
+		if (IsKeyPressed(KEY_SPACE))
+		{
+			LOG("Starting game...");
+			show_menu = false;
+		}
+
+		return UPDATE_CONTINUE;
+	}
+
 	if (!game_started) {
 		CreateEnemiesAndPlayer();
 		game_started = true;
@@ -451,7 +527,7 @@ void ModuleGame::CreateCollisionBodies()
 
 		for (size_t i = 0; i < collision.points.size(); ++i)
 		{
-			vec2i absolute_point;
+			vec2i absolute_point(0, 0);
 			absolute_point.x = collision.points[i].x + collision.offset_x;
 			absolute_point.y = collision.points[i].y + collision.offset_y;
 			absolute_points.push_back(absolute_point);

@@ -28,8 +28,10 @@
     <ClCompile Include="Source\ModuleGame.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="Source/Player.cpp" />
     <ClCompile Include="Source\AIVehicle.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Source/Player.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -64,8 +66,10 @@
     <ClInclude Include="Source\ModuleGame.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Source/Player.h" />
     <ClInclude Include="Source\AIVehicle.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source/Player.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

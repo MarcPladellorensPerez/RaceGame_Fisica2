@@ -14,17 +14,20 @@ public:
 
 	TYPE x, y;
 
-	vec2()
-	{}
+	vec2() : x(TYPE()), y(TYPE())
+	{
+	}
 
 	vec2(const vec2& p) : x(p.x), y(p.y)
-	{}
+	{
+	}
 
 	vec2(TYPE x, TYPE y) : x(x), y(y)
-	{}
+	{
+	}
 
 	// Math ------------------------------------------------
-	vec2 operator -(const vec2 &v) const
+	vec2 operator -(const vec2& v) const
 	{
 		vec2<TYPE> r;
 
@@ -34,7 +37,7 @@ public:
 		return(r);
 	}
 
-	vec2 operator + (const vec2 &v) const
+	vec2 operator + (const vec2& v) const
 	{
 		vec2<TYPE> r;
 
@@ -44,7 +47,7 @@ public:
 		return(r);
 	}
 
-	const vec2& operator -=(const vec2 &v)
+	const vec2& operator -=(const vec2& v)
 	{
 		x -= v.x;
 		y -= v.y;
@@ -52,7 +55,7 @@ public:
 		return(*this);
 	}
 
-	const vec2& operator +=(const vec2 &v)
+	const vec2& operator +=(const vec2& v)
 	{
 		x += v.x;
 		y += v.y;
@@ -96,17 +99,17 @@ public:
 		TYPE fx = x - v.x;
 		TYPE fy = y - v.y;
 
-		return (TYPE) sqrtf(float((fx*fx) + (fy*fy)));
+		return (TYPE)sqrtf(float((fx * fx) + (fy * fy)));
 	}
 
 	void Normalize()
 	{
-		float m = x * x + y * y;
+		float m = (float)(x * x + y * y);
 		if (m > 0.0f)
 		{
-			float inv_m = 1 / sqrtf(m);
-			x *= inv_m;
-			y *= inv_m;
+			float inv_m = 1.0f / sqrtf(m);
+			x = (TYPE)(x * inv_m);
+			y = (TYPE)(y * inv_m);
 		}
 	}
 
@@ -122,17 +125,17 @@ public:
 
 	vec2<TYPE>& operator*=(float a)
 	{
-		x *= a;
-		y *= a;
+		x = (TYPE)(x * a);
+		y = (TYPE)(y * a);
 		return(*this);
 	}
 
-	vec2<TYPE>& operator*(float a)
+	vec2<TYPE> operator*(float a) const
 	{
-		p2Vector<TYPE> r;
+		vec2<TYPE> r;
 
-		r.x = x * a;
-		r.y = y * a;
+		r.x = (TYPE)(x * a);
+		r.y = (TYPE)(y * a);
 
 		return r;
 	}
@@ -140,8 +143,8 @@ public:
 	vec2<TYPE>& operator/=(float a)
 	{
 		float f = 1.0f / a;
-		x *= f;
-		y *= f;
+		x = (TYPE)(x * f);
+		y = (TYPE)(y * f);
 		return(*this);
 	}
 };

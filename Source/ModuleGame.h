@@ -46,7 +46,10 @@ public:
 	update_status Update();
 	bool CleanUp();
 
-public:
+	// Start Menu
+	bool show_menu;
+	Texture2D start_menu_texture;
+
 	Texture2D tile_set;
 	std::vector<int> map_data;
 	int map_width;
