@@ -2,6 +2,7 @@
 #include "Application.h"
 #include "Player.h"
 #include "ModuleRender.h"
+#include "ModuleGame.h"
 #include <stdlib.h>
 #include <cmath>
 
@@ -275,6 +276,15 @@ void ModulePlayer::DrawNitroEffects()
 update_status ModulePlayer::Update()
 {
 	if (vehicle == nullptr || vehicle->body == nullptr) return UPDATE_CONTINUE;
+
+	// Check if menu is shown, if so, don't update player
+	if (App->scene_intro->show_menu)
+	{
+		// Keep vehicle stopped while in menu
+		vehicle->body->SetLinearVelocity(b2Vec2(0, 0));
+		vehicle->body->SetAngularVelocity(0);
+		return UPDATE_CONTINUE;
+	}
 
 	float dt = GetFrameTime();
 	UpdateNitro(dt);
