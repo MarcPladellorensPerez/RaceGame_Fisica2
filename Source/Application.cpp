@@ -46,6 +46,9 @@ bool Application::Init()
 		ret = module->Init();
 	}
 
+	// Limit to 60 FPS
+	SetTargetFPS(60);
+
 	for (auto it = list_modules.begin(); it != list_modules.end() && ret; ++it)
 	{
 		Module* module = *it;
