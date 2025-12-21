@@ -58,6 +58,13 @@ public:
 	Texture2D start_menu_texture;
 	Texture2D level_select_texture;
 
+	// Background music
+	Music menu_music;
+	Music level1_music;
+	Music level2_music;
+	Music level3_music;
+	Music current_music;
+
 	Texture2D tile_set;
 	std::vector<int> map_data;
 	int map_width;
@@ -84,4 +91,6 @@ private:
 	void CreateEnemiesAndPlayer();
 	void StartGame(const char* map_path);
 	void ResetGame();
+	void PlayBackgroundMusic(Music music);
+	void StopCurrentMusic();
 };

@@ -40,14 +40,14 @@ update_status ModuleRender::PostUpdate()
 
 	if (App->physics->debug)
 	{
-		DrawText("MODE DEBUG ACTIVAT", 10, 40, 20, RED);
-		DrawText("Fes clic i arrossega els objectes!", 10, 65, 16, DARKGRAY);
-		DrawText("Prem F1 per desactivar", 10, 85, 16, DARKGRAY);
+		DrawText("DEBUG MODE ACTIVATED", 10, 40, 20, RED);
+		DrawText("Click to drag objects!", 10, 65, 16, DARKGRAY);
+		DrawText("Press F1 to disable Debug Mode", 10, 85, 16, DARKGRAY);
 		DrawText(TextFormat("Camera: (%.0f, %.0f)", camera_x, camera_y), 10, 110, 16, BLUE);
 	}
 	else
 	{
-		DrawText("Prem F1 per activar mode DEBUG", 10, 40, 16, DARKGRAY);
+		DrawText("Press F1 to activate Debug Mode", 10, 40, 16, DARKGRAY);
 	}
 
 	EndDrawing();

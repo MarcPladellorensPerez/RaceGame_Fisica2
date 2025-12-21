@@ -24,6 +24,13 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	menu_state = MenuState::START_MENU;
 	start_menu_texture = { 0 };
 	level_select_texture = { 0 };
+
+	// Initialize music structures
+	menu_music = { 0 };
+	level1_music = { 0 };
+	level2_music = { 0 };
+	level3_music = { 0 };
+	current_music = { 0 };
 }
 
 ModuleGame::~ModuleGame()
@@ -78,6 +85,28 @@ bool ModuleGame::Start()
 		}
 	}
 
+	// Load background music
+	menu_music = LoadMusicStream("Assets/Audio/BackgroundMusic/SeeYouAgain.mp3");
+	level1_music = LoadMusicStream("Assets/Audio/BackgroundMusic/TokyoDrift.mp3");
+	level2_music = LoadMusicStream("Assets/Audio/BackgroundMusic/DanzaKuduro.mp3");
+	level3_music = LoadMusicStream("Assets/Audio/BackgroundMusic/Delirious.mp3");
+
+	if (!IsMusicReady(menu_music)) {
+		LOG("WARNING: Could not load menu music");
+	}
+	if (!IsMusicReady(level1_music)) {
+		LOG("WARNING: Could not load level 1 music");
+	}
+	if (!IsMusicReady(level2_music)) {
+		LOG("WARNING: Could not load level 2 music");
+	}
+	if (!IsMusicReady(level3_music)) {
+		LOG("WARNING: Could not load level 3 music");
+	}
+
+	// Start menu music
+	PlayBackgroundMusic(menu_music);
+
 	// Don't load map on start, wait for level selection
 	LOG("ModuleGame: Resources loaded, waiting for level selection.");
 
@@ -86,6 +115,13 @@ bool ModuleGame::Start()
 
 bool ModuleGame::CleanUp()
 {
+	// Stop and unload music
+	StopCurrentMusic();
+	if (IsMusicReady(menu_music)) UnloadMusicStream(menu_music);
+	if (IsMusicReady(level1_music)) UnloadMusicStream(level1_music);
+	if (IsMusicReady(level2_music)) UnloadMusicStream(level2_music);
+	if (IsMusicReady(level3_music)) UnloadMusicStream(level3_music);
+
 	// Clean start menu texture
 	if (start_menu_texture.id != 0)
 	{
@@ -120,6 +156,12 @@ bool ModuleGame::CleanUp()
 
 update_status ModuleGame::Update()
 {
+	// Update current music stream
+	if (IsMusicReady(current_music) && IsMusicStreamPlaying(current_music))
+	{
+		UpdateMusicStream(current_music);
+	}
+
 	// Show initial menu and wait for SPACE
 	if (menu_state == MenuState::START_MENU)
 	{
@@ -205,14 +247,17 @@ update_status ModuleGame::Update()
 		if (IsKeyPressed(KEY_ONE))
 		{
 			StartGame("Assets/Map/RaceTrack.tmx");
+			PlayBackgroundMusic(level1_music);
 		}
 		else if (IsKeyPressed(KEY_TWO))
 		{
 			StartGame("Assets/Map/RaceTrack2.tmx");
+			PlayBackgroundMusic(level2_music);
 		}
 		else if (IsKeyPressed(KEY_THREE))
 		{
 			StartGame("Assets/Map/RaceTrack3.tmx");
+			PlayBackgroundMusic(level3_music);
 		}
 
 		return UPDATE_CONTINUE;
@@ -229,6 +274,7 @@ update_status ModuleGame::Update()
 		menu_state = MenuState::LEVEL_SELECT;
 		show_menu = true;
 		game_started = false;
+		PlayBackgroundMusic(menu_music);
 		return UPDATE_CONTINUE;
 	}
 
@@ -716,5 +762,30 @@ void ModuleGame::CreateCollisionBodies()
 		{
 			collision_bodies.push_back(body);
 		}
+	}
+}
+
+void ModuleGame::PlayBackgroundMusic(Music music)
+{
+	// Stop current music if playing
+	StopCurrentMusic();
+
+	// Play new music
+	if (IsMusicReady(music)) {
+		current_music = music;
+		PlayMusicStream(current_music);
+		SetMusicVolume(current_music, 1.0f);
+		LOG("Playing background music");
+	}
+	else {
+		LOG("WARNING: Music not ready!");
+	}
+}
+
+void ModuleGame::StopCurrentMusic()
+{
+	if (IsMusicReady(current_music) && IsMusicStreamPlaying(current_music)) {
+		StopMusicStream(current_music);
+		LOG("Stopped background music");
 	}
 }
