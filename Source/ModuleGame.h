@@ -36,6 +36,12 @@ struct Waypoint {
 	Waypoint() : id(-1), position(0, 0) {}
 };
 
+enum class MenuState {
+	START_MENU,
+	LEVEL_SELECT,
+	PLAYING
+};
+
 class ModuleGame : public Module
 {
 public:
@@ -47,8 +53,10 @@ public:
 	bool CleanUp();
 
 	// Start Menu
+	MenuState menu_state;
 	bool show_menu;
 	Texture2D start_menu_texture;
+	Texture2D level_select_texture;
 
 	Texture2D tile_set;
 	std::vector<int> map_data;
@@ -64,7 +72,6 @@ public:
 
 	// Vector IA Vehicles
 	std::vector<AIVehicle*> ai_vehicles;
-
 	std::vector<Texture2D> ai_car_textures;
 
 	bool game_started;
@@ -75,4 +82,6 @@ private:
 	void LoadMapObjects(const char* map_path);
 	void CreateCollisionBodies();
 	void CreateEnemiesAndPlayer();
+	void StartGame(const char* map_path);
+	void ResetGame();
 };

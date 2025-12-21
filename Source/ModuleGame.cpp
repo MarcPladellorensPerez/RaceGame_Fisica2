@@ -19,9 +19,11 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	tile_set = { 0 };
 	game_started = false;
 
-	// start menu variables
+	// Start menu variables
 	show_menu = true;
+	menu_state = MenuState::START_MENU;
 	start_menu_texture = { 0 };
+	level_select_texture = { 0 };
 }
 
 ModuleGame::~ModuleGame()
@@ -46,6 +48,18 @@ bool ModuleGame::Start()
 		LOG("Start menu texture loaded successfully!");
 	}
 
+	// Load level select menu texture
+	level_select_texture = LoadTexture("Assets/Textures/UI/SelectLevelMenu.png");
+
+	if (level_select_texture.id == 0)
+	{
+		LOG("WARNING: Could not load level select texture");
+	}
+	else
+	{
+		LOG("Level select texture loaded successfully!");
+	}
+
 	tile_set = LoadTexture("Assets/Map/spritesheet_tiles.png");
 
 	if (tile_set.id == 0)
@@ -54,6 +68,7 @@ bool ModuleGame::Start()
 		return false;
 	}
 
+	// Load AI car textures
 	char path[256];
 	for (int i = 2; i <= 8; ++i) {
 		sprintf_s(path, "Assets/Textures/Cars/car%d.png", i);
@@ -63,13 +78,8 @@ bool ModuleGame::Start()
 		}
 	}
 
-	LoadMap("Assets/Map/RaceTrack.tmx");
-	LoadCollisions("Assets/Map/RaceTrack.tmx");
-	LoadMapObjects("Assets/Map/RaceTrack.tmx");
-
-	CreateCollisionBodies();
-
-	LOG("ModuleGame: Mapa carregat correctament.");
+	// Don't load map on start, wait for level selection
+	LOG("ModuleGame: Resources loaded, waiting for level selection.");
 
 	return ret;
 }
@@ -80,6 +90,12 @@ bool ModuleGame::CleanUp()
 	if (start_menu_texture.id != 0)
 	{
 		UnloadTexture(start_menu_texture);
+	}
+
+	// Clean level select menu texture
+	if (level_select_texture.id != 0)
+	{
+		UnloadTexture(level_select_texture);
 	}
 
 	UnloadTexture(tile_set);
@@ -104,7 +120,8 @@ bool ModuleGame::CleanUp()
 
 update_status ModuleGame::Update()
 {
-	if (show_menu)
+	// Show initial menu and wait for SPACE
+	if (menu_state == MenuState::START_MENU)
 	{
 		// Restart camera position
 		App->renderer->camera_x = 0;
@@ -116,7 +133,7 @@ update_status ModuleGame::Update()
 		// Draw start menu
 		if (start_menu_texture.id != 0)
 		{
-			// Calculete scaling to fit screen while maintaining aspect ratio
+			// Calculate scaling to fit screen while maintaining aspect ratio
 			float scale_x = (float)SCREEN_WIDTH / start_menu_texture.width;
 			float scale_y = (float)SCREEN_HEIGHT / start_menu_texture.height;
 			float scale = fminf(scale_x, scale_y);
@@ -137,32 +154,85 @@ update_status ModuleGame::Update()
 			// Text menu fallback
 			const char* title = "RACING GAME";
 			const char* subtitle = "Physics II Project";
-			const char* instruction = "Press SPACE to Start";
 
 			int title_width = MeasureText(title, 80);
 			int subtitle_width = MeasureText(subtitle, 30);
-			int instruction_width = MeasureText(instruction, 40);
 
 			DrawText(title, (SCREEN_WIDTH - title_width) / 2, 200, 80, YELLOW);
 			DrawText(subtitle, (SCREEN_WIDTH - subtitle_width) / 2, 300, 30, LIGHTGRAY);
-
 		}
 
-		// Start game on space key press
+		// Transition to level select on space key press
 		if (IsKeyPressed(KEY_SPACE))
 		{
-			LOG("Starting game...");
-			show_menu = false;
+			LOG("Transitioning to level select menu...");
+			menu_state = MenuState::LEVEL_SELECT;
 		}
 
 		return UPDATE_CONTINUE;
 	}
 
-	if (!game_started) {
-		CreateEnemiesAndPlayer();
-		game_started = true;
+	// Show level selection and wait for 1/2/3
+	if (menu_state == MenuState::LEVEL_SELECT)
+	{
+		// Keep camera reset
+		App->renderer->camera_x = 0;
+		App->renderer->camera_y = 0;
+
+		ClearBackground(BLACK);
+
+		// Draw level select menu
+		if (level_select_texture.id != 0)
+		{
+			// Calculate scaling to fit screen while maintaining aspect ratio
+			float scale_x = (float)SCREEN_WIDTH / level_select_texture.width;
+			float scale_y = (float)SCREEN_HEIGHT / level_select_texture.height;
+			float scale = fminf(scale_x, scale_y);
+
+			int img_width = (int)(level_select_texture.width * scale);
+			int img_height = (int)(level_select_texture.height * scale);
+			int pos_x = (SCREEN_WIDTH - img_width) / 2;
+			int pos_y = (SCREEN_HEIGHT - img_height) / 2;
+
+			Rectangle source = { 0, 0, (float)level_select_texture.width, (float)level_select_texture.height };
+			Rectangle dest = { (float)pos_x, (float)pos_y, (float)img_width, (float)img_height };
+			Vector2 origin = { 0, 0 };
+
+			DrawTexturePro(level_select_texture, source, dest, origin, 0.0f, WHITE);
+		}
+
+		// Level selection input
+		if (IsKeyPressed(KEY_ONE))
+		{
+			StartGame("Assets/Map/RaceTrack.tmx");
+		}
+		else if (IsKeyPressed(KEY_TWO))
+		{
+			StartGame("Assets/Map/RaceTrack2.tmx");
+		}
+		else if (IsKeyPressed(KEY_THREE))
+		{
+			StartGame("Assets/Map/RaceTrack3.tmx");
+		}
+
+		return UPDATE_CONTINUE;
 	}
 
+	// Playing state
+	if (!game_started) return UPDATE_CONTINUE;
+
+	// Check if player wants to return to level select
+	if (IsKeyPressed(KEY_M))
+	{
+		LOG("Returning to level select menu...");
+		ResetGame();
+		menu_state = MenuState::LEVEL_SELECT;
+		show_menu = true;
+		game_started = false;
+		return UPDATE_CONTINUE;
+	}
+
+	// Draw map tiles
 	int tile_size = 128;
 	int columns = 18;
 
@@ -183,13 +253,63 @@ update_status ModuleGame::Update()
 		}
 	}
 
+	// Update AI vehicles
 	float dt = GetFrameTime();
 	for (auto* vehicle : ai_vehicles) {
 		vehicle->Update(dt, waypoints);
 		vehicle->Draw(App->physics->debug);
 	}
 
+	// Draw UI hint for returning to menu
+	DrawText("[M] Back to Level Select", 10, SCREEN_HEIGHT - 30, 20, WHITE);
+
 	return UPDATE_CONTINUE;
+}
+
+void ModuleGame::StartGame(const char* map_path)
+{
+	LOG("Starting game with map: %s", map_path);
+
+	// Change to playing state
+	menu_state = MenuState::PLAYING;
+	show_menu = false;
+
+	// Load selected map and its data
+	LoadMap(map_path);
+	LoadCollisions(map_path);
+	LoadMapObjects(map_path);
+	CreateCollisionBodies();
+	CreateEnemiesAndPlayer();
+
+	game_started = true;
+}
+
+void ModuleGame::ResetGame()
+{
+	// Clean up AI vehicles and their physics bodies
+	for (auto* vehicle : ai_vehicles) {
+		if (vehicle && vehicle->body) {
+			App->physics->GetWorld()->DestroyBody(vehicle->body);
+			vehicle->body = nullptr;
+		}
+		delete vehicle;
+	}
+	ai_vehicles.clear();
+
+	// Clean up collision bodies - only destroy Box2D body, PhysBody wrapper is deleted separately
+	for (auto* pbody : collision_bodies) {
+		if (pbody && pbody->body) {
+			App->physics->GetWorld()->DestroyBody(pbody->body);
+			pbody->body = nullptr;
+		}
+	}
+	collision_bodies.clear();
+
+	// Clear game data
+	waypoints.clear();
+	spawn_points.clear();
+	map_data.clear();
+	collision_objects.clear();
 }
 
 std::vector<std::string> SplitString(const std::string& s, char delimiter) {
@@ -295,10 +415,12 @@ void ModuleGame::CreateEnemiesAndPlayer()
 		return;
 	}
 
+	// Shuffle spawn points for random positioning
 	std::random_device rd;
 	std::mt19937 g(rd());
 	std::shuffle(spawn_points.begin(), spawn_points.end(), g);
 
+	// Assign first spawn to player
 	if (App->player != nullptr && App->player->vehicle != nullptr) {
 		App->player->SetPosition(spawn_points[0].x, spawn_points[0].y, -90.0f);
 		LOG("Player teleported to spawn: %.2f, %.2f", spawn_points[0].x, spawn_points[0].y);
@@ -307,6 +429,7 @@ void ModuleGame::CreateEnemiesAndPlayer()
 		LOG("ERROR: Player vehicle not ready during spawn assignment!");
 	}
 
+	// Create AI vehicles at remaining spawn points
 	for (size_t i = 1; i < spawn_points.size(); ++i) {
 		AIVehicle* newAI = new AIVehicle();
 
