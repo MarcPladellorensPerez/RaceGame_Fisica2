@@ -84,6 +84,19 @@ void ModulePlayer::SetPosition(float x, float y, float rotation_degrees)
 	}
 }
 
+// Reset nitro system to initial state (fully charged)
+void ModulePlayer::ResetNitro()
+{
+	nitro_active = false;
+	nitro_duration = NITRO_MAX_DURATION;
+	nitro_timer = 0.0f;
+	nitro_cooldown_timer = 0.0f;
+	nitro_particle_timer = 0.0f;
+	nitro_particles.clear();
+
+	LOG("ModulePlayer: Nitro system reset to full charge");
+}
+
 bool ModulePlayer::CleanUp()
 {
 	UnloadTexture(vehicle_texture);
@@ -93,6 +106,7 @@ bool ModulePlayer::CleanUp()
 
 void ModulePlayer::UpdateNitro(float dt)
 {
+	// Handle cooldown period
 	if (nitro_cooldown_timer > 0.0f)
 	{
 		nitro_cooldown_timer -= dt;
@@ -103,16 +117,19 @@ void ModulePlayer::UpdateNitro(float dt)
 		}
 		else
 		{
+			// Gradually refill the bar during cooldown
 			nitro_duration = NITRO_MAX_DURATION * (1.0f - (nitro_cooldown_timer / NITRO_COOLDOWN_TIME));
 		}
 	}
 
+	// Activate nitro when N is pressed (only if fully charged and not on cooldown)
 	if (IsKeyPressed(KEY_N) && nitro_duration >= NITRO_MAX_DURATION && nitro_cooldown_timer <= 0.0f)
 	{
 		nitro_active = true;
 		nitro_timer = 0.0f;
 	}
 
+	// Update nitro timer and deactivate when duration is reached
 	if (nitro_active)
 	{
 		nitro_timer += dt;
@@ -134,6 +151,7 @@ void ModulePlayer::DrawNitroBar()
 	int bar_height = 30;
 	int border_thickness = 3;
 
+	// Draw bar background
 	DrawRectangle(bar_x, bar_y, bar_width, bar_height, ColorAlpha(BLACK, 0.6f));
 	DrawRectangleLinesEx({ (float)bar_x, (float)bar_y, (float)bar_width, (float)bar_height },
 		(float)border_thickness, WHITE);
@@ -141,6 +159,7 @@ void ModulePlayer::DrawNitroBar()
 	float fill_percentage = 0.0f;
 	Color fill_color;
 
+	// Determine bar state and color
 	if (nitro_active)
 	{
 		fill_percentage = 1.0f - (nitro_timer / NITRO_MAX_DURATION);
@@ -157,12 +176,14 @@ void ModulePlayer::DrawNitroBar()
 		fill_color = Color{ 0, 200, 255, 255 };
 	}
 
+	// Draw fill bar
 	int fill_width = (int)((bar_width - border_thickness * 2) * fill_percentage);
 	if (fill_width > 0)
 	{
 		DrawRectangle(bar_x + border_thickness, bar_y + border_thickness,
 			fill_width, bar_height - border_thickness * 2, fill_color);
 
+		// Draw glow effect when ready
 		if (fill_percentage >= 1.0f && !nitro_active)
 		{
 			DrawRectangleLinesEx({ (float)bar_x - 2, (float)bar_y - 2,
@@ -171,6 +192,7 @@ void ModulePlayer::DrawNitroBar()
 		}
 	}
 
+	// Draw text labels
 	DrawText("NITRO", bar_x + 10, bar_y + 7, 16, WHITE);
 
 	if (nitro_active)
@@ -188,6 +210,7 @@ void ModulePlayer::DrawNitroBar()
 		DrawText("READY", bar_x + bar_width - 60, bar_y + 7, 16, GREEN);
 	}
 
+	// Draw instruction text
 	if (!nitro_active && nitro_cooldown_timer <= 0.0f)
 	{
 		DrawText("Press [N]", bar_x + 50, bar_y + bar_height + 5, 14, LIGHTGRAY);
@@ -202,10 +225,12 @@ void ModulePlayer::DrawNitroEffects()
 	vehicle->GetPosition(x, y);
 	float rotation = vehicle->GetRotation() * DEG_TO_RAD;
 
+	// Calculate rear position for particle emission
 	float rear_offset = vehicle_texture.height * 0.4f;
 	float rear_x = x - sinf(rotation) * rear_offset;
 	float rear_y = y + cosf(rotation) * rear_offset;
 
+	// Generate new particles
 	nitro_particle_timer += GetFrameTime();
 	if (nitro_particle_timer >= 0.02f)
 	{
@@ -227,6 +252,7 @@ void ModulePlayer::DrawNitroEffects()
 			particle.max_lifetime = 0.5f + (rand() % 100) / 200.0f;
 			particle.lifetime = particle.max_lifetime;
 
+			// Random color variants
 			int color_variant = rand() % 3;
 			if (color_variant == 0) particle.color = Color{ 0, 150, 255, 255 };
 			else if (color_variant == 1) particle.color = Color{ 100, 200, 255, 255 };
@@ -236,6 +262,7 @@ void ModulePlayer::DrawNitroEffects()
 		}
 	}
 
+	// Update and draw particles
 	float dt = GetFrameTime();
 	for (size_t i = 0; i < nitro_particles.size(); )
 	{
@@ -248,13 +275,16 @@ void ModulePlayer::DrawNitroEffects()
 			continue;
 		}
 
+		// Update particle position
 		p.position.x += p.velocity.x * dt;
 		p.position.y += p.velocity.y * dt;
 
+		// Calculate alpha based on lifetime
 		float alpha = p.lifetime / p.max_lifetime;
 		Color draw_color = p.color;
 		draw_color.a = (unsigned char)(255 * alpha);
 
+		// Draw particle with growing size
 		float size = 8.0f * (1.0f + (1.0f - alpha) * 2.0f);
 		float screen_x = p.position.x + App->renderer->camera_x;
 		float screen_y = p.position.y + App->renderer->camera_y;
@@ -265,6 +295,7 @@ void ModulePlayer::DrawNitroEffects()
 		i++;
 	}
 
+	// Draw main nitro glow at vehicle rear
 	DrawCircle((int)(rear_x + App->renderer->camera_x),
 		(int)(rear_y + App->renderer->camera_y),
 		15.0f, ColorAlpha(Color{ 0, 150, 255, 255 }, 0.6f));
@@ -289,6 +320,7 @@ update_status ModulePlayer::Update()
 	float dt = GetFrameTime();
 	UpdateNitro(dt);
 
+	// Vehicle physics parameters
 	float acceleration = 25.0f;
 	float max_speed_forward = 6.0f;
 	float max_speed_reverse = 4.5f;
@@ -297,6 +329,7 @@ update_status ModulePlayer::Update()
 	float brake_strength = 8.0f;
 	float handbrake_drift_force = 25.0f;
 
+	// Apply nitro boost
 	if (nitro_active)
 	{
 		acceleration *= 2.5f;
@@ -312,6 +345,7 @@ update_status ModulePlayer::Update()
 	bool moving_backward = forward_velocity < -0.1f;
 	bool is_stopped = speed < 0.1f;
 
+	// Forward acceleration
 	if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))
 	{
 		b2Vec2 forward = vehicle->body->GetWorldVector(b2Vec2(0.0f, -1.0f));
@@ -320,10 +354,12 @@ update_status ModulePlayer::Update()
 		vehicle->body->ApplyForceToCenter(forward, true);
 	}
 
+	// Reverse / Brake
 	if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN))
 	{
 		if (moving_forward && speed > 1.0f)
 		{
+			// Apply braking force
 			b2Vec2 brake_force;
 			brake_force.x = -velocity.x * vehicle->body->GetMass() * brake_strength;
 			brake_force.y = -velocity.y * vehicle->body->GetMass() * brake_strength;
@@ -331,6 +367,7 @@ update_status ModulePlayer::Update()
 		}
 		else
 		{
+			// Apply reverse force
 			b2Vec2 backward = vehicle->body->GetWorldVector(b2Vec2(0.0f, 1.0f));
 			backward.x *= acceleration;
 			backward.y *= acceleration;
@@ -343,10 +380,12 @@ update_status ModulePlayer::Update()
 	bool is_turning = turning_left || turning_right;
 	bool handbrake_active = IsKeyDown(KEY_SPACE);
 
+	// Handbrake / Drift system
 	if (handbrake_active)
 	{
 		if (is_turning && !is_stopped)
 		{
+			// Apply drift physics
 			b2Vec2 right_vector = vehicle->body->GetWorldVector(b2Vec2(1.0f, 0.0f));
 			float lateral_velocity = b2Dot(right_vector, velocity);
 
@@ -355,12 +394,14 @@ update_status ModulePlayer::Update()
 			drift_impulse.y = -lateral_velocity * 0.3f * vehicle->body->GetMass() * right_vector.y;
 			vehicle->body->ApplyLinearImpulseToCenter(drift_impulse, true);
 
+			// Apply drift torque
 			float drift_torque = 0.0f;
 			if (turning_left) drift_torque = -handbrake_drift_force * (speed / max_speed_forward);
 			else if (turning_right) drift_torque = handbrake_drift_force * (speed / max_speed_forward);
 
 			vehicle->body->ApplyTorque(drift_torque, true);
 
+			// Apply drift brake
 			b2Vec2 drift_brake;
 			drift_brake.x = -velocity.x * vehicle->body->GetMass() * 2.0f;
 			drift_brake.y = -velocity.y * vehicle->body->GetMass() * 2.0f;
@@ -368,6 +409,7 @@ update_status ModulePlayer::Update()
 		}
 		else
 		{
+			// Simple handbrake when not turning
 			b2Vec2 brake_force;
 			brake_force.x = -velocity.x * vehicle->body->GetMass() * 5.0f;
 			brake_force.y = -velocity.y * vehicle->body->GetMass() * 5.0f;
@@ -376,6 +418,7 @@ update_status ModulePlayer::Update()
 	}
 	else
 	{
+		// Normal steering
 		if (speed > 0.5f && is_turning)
 		{
 			float speed_ratio = moving_forward ? (speed / max_speed_forward) : (speed / max_speed_reverse);
@@ -392,6 +435,7 @@ update_status ModulePlayer::Update()
 			vehicle->body->SetAngularVelocity(vehicle->body->GetAngularVelocity() * 0.9f);
 		}
 
+		// Apply lateral friction for realistic car physics
 		b2Vec2 right_vector = vehicle->body->GetWorldVector(b2Vec2(1.0f, 0.0f));
 		float lateral_velocity = b2Dot(right_vector, velocity);
 
@@ -401,6 +445,7 @@ update_status ModulePlayer::Update()
 		vehicle->body->ApplyLinearImpulseToCenter(impulse, true);
 	}
 
+	// Limit forward speed
 	if (moving_forward && speed > max_speed_forward)
 	{
 		velocity.Normalize();
@@ -408,6 +453,7 @@ update_status ModulePlayer::Update()
 		velocity.y *= max_speed_forward;
 		vehicle->body->SetLinearVelocity(velocity);
 	}
+	// Limit reverse speed
 	else if (moving_backward && speed > max_speed_reverse)
 	{
 		velocity.Normalize();
@@ -416,19 +462,25 @@ update_status ModulePlayer::Update()
 		vehicle->body->SetLinearVelocity(velocity);
 	}
 
+	// Update camera to follow player
 	int x, y;
 	vehicle->GetPosition(x, y);
 	float rotation = vehicle->GetRotation();
 
 	App->renderer->UpdateCamera((float)x, (float)y, 0.1f);
+
+	// Draw nitro effects
 	DrawNitroEffects();
 
+	// Draw vehicle
 	Rectangle source = { 0, 0, (float)vehicle_texture.width, (float)vehicle_texture.height };
 	App->renderer->Draw(vehicle_texture, x, y, &source, rotation,
 		(int)(vehicle_texture.width / 2.0f), (int)(vehicle_texture.height / 2.0f));
 
+	// Draw UI
 	DrawNitroBar();
 
+	// Debug info
 	if (App->physics->debug)
 	{
 		DrawText(TextFormat("Speed: %.1f", speed), 10, 135, 16, GREEN);

@@ -22,6 +22,9 @@ public:
 
 	void SetPosition(float x, float y, float rotation_degrees = 0.0f);
 
+	// Reset nitro to full charge (called when changing levels)
+	void ResetNitro();
+
 	// Nitro system methods
 	void UpdateNitro(float dt);
 	void DrawNitroBar();

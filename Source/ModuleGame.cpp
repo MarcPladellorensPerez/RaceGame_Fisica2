@@ -327,6 +327,12 @@ void ModuleGame::StartGame(const char* map_path)
 	CreateCollisionBodies();
 	CreateEnemiesAndPlayer();
 
+	// Reset player nitro to full charge when starting a new level
+	if (App->player)
+	{
+		App->player->ResetNitro();
+	}
+
 	game_started = true;
 }
 
@@ -356,6 +362,12 @@ void ModuleGame::ResetGame()
 	spawn_points.clear();
 	map_data.clear();
 	collision_objects.clear();
+
+	// Reset player nitro when returning to menu
+	if (App->player)
+	{
+		App->player->ResetNitro();
+	}
 }
 
 std::vector<std::string> SplitString(const std::string& s, char delimiter) {
