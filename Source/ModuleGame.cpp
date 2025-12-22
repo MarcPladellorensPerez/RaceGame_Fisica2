@@ -86,7 +86,7 @@ bool ModuleGame::Start()
 	}
 
 	// Load background music
-	menu_music = LoadMusicStream("Assets/Audio/BackgroundMusic/SeeYouAgain.mp3");
+	menu_music = LoadMusicStream("Assets/Audio/BackgroundMusic/Bandolero.mp3");
 	level1_music = LoadMusicStream("Assets/Audio/BackgroundMusic/TokyoDrift.mp3");
 	level2_music = LoadMusicStream("Assets/Audio/BackgroundMusic/DanzaKuduro.mp3");
 	level3_music = LoadMusicStream("Assets/Audio/BackgroundMusic/Delirious.mp3");
