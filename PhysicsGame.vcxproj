@@ -189,6 +189,7 @@
     <ClInclude Include="Source/ModuleWindow.h" />
     <ClInclude Include="Source/p2Point.h" />
     <ClInclude Include="Source\AIVehicle.h" />
+    <ClInclude Include="Source\Leaderboard.h" />
     <ClInclude Include="Source\ModuleGame.h" />
     <ClInclude Include="Source\Timer.h" />
     <ClInclude Include="Source/Player.h" />
@@ -202,6 +203,7 @@
     <ClCompile Include="Source/ModuleRender.cpp" />
     <ClCompile Include="Source/ModuleWindow.cpp" />
     <ClCompile Include="Source\AIVehicle.cpp" />
+    <ClCompile Include="Source\Leaderboard.cpp" />
     <ClCompile Include="Source\ModuleGame.cpp" />
     <ClCompile Include="Source\Timer.cpp" />
     <ClCompile Include="Source/Player.cpp" />

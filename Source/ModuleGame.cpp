@@ -31,10 +31,19 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	level2_music = { 0 };
 	level3_music = { 0 };
 	current_music = { 0 };
+
+	leaderboard = new Leaderboard();
+
 }
 
 ModuleGame::~ModuleGame()
 {
+
+	if (leaderboard) {
+		delete leaderboard;
+		leaderboard = nullptr;
+	}
+
 }
 
 bool ModuleGame::Start()
@@ -73,6 +82,10 @@ bool ModuleGame::Start()
 	{
 		LOG("ERROR: No s'ha pogut carregar el tileset!");
 		return false;
+	}
+
+	if (leaderboard) {
+		leaderboard->Init();
 	}
 
 	// Load AI car textures
@@ -135,6 +148,11 @@ bool ModuleGame::CleanUp()
 	}
 
 	UnloadTexture(tile_set);
+
+	//Clean leaderboard
+	if (leaderboard) {
+		leaderboard->CleanUp();
+	}
 
 	for (auto& tex : ai_car_textures) {
 		UnloadTexture(tex);
@@ -297,6 +315,73 @@ update_status ModuleGame::Update()
 				App->renderer->Draw(tile_set, x * tile_size, y * tile_size, &source);
 			}
 		}
+	}
+
+	if (menu_state == MenuState::PLAYING && game_started) {
+
+		if (IsKeyPressed(KEY_TAB)) {
+			leaderboard->SetVisible(!leaderboard->IsVisible());
+		}
+
+		std::vector<RacerInfo> racers;
+
+		if (App->player->vehicle && App->player->vehicle->body) {
+			RacerInfo player_info;
+			player_info.name = "PLAYER";
+			player_info.is_player = true;
+			player_info.body = App->player->vehicle->body;
+
+			player_info.current_waypoint = 0;
+
+			if (!waypoints.empty()) {
+				b2Vec2 player_pos = App->player->vehicle->body->GetPosition();
+				b2Vec2 waypoint_pos = waypoints[0].position;
+				b2Vec2 diff = waypoint_pos - player_pos;
+				player_info.distance_to_next_waypoint = diff.Length();
+			}
+			else {
+				player_info.distance_to_next_waypoint = 0.0f;
+			}
+
+			racers.push_back(player_info);
+		}
+
+		for (size_t i = 0; i < ai_vehicles.size(); ++i) {
+			AIVehicle* ai = ai_vehicles[i];
+			if (ai && ai->active && ai->body) {
+				RacerInfo ai_info;
+
+				char name_buffer[32];
+				sprintf_s(name_buffer, "AI CAR %d", (int)i + 1);
+				ai_info.name = name_buffer;
+
+				ai_info.is_player = false;
+				ai_info.body = ai->body;
+				ai_info.current_waypoint = ai->current_waypoint_id;
+
+				b2Vec2 ai_pos = ai->body->GetPosition();
+				bool found_waypoint = false;
+
+				for (const auto& wp : waypoints) {
+					if (wp.id == ai->current_waypoint_id) {
+						b2Vec2 diff = wp.position - ai_pos;
+						ai_info.distance_to_next_waypoint = diff.Length();
+						found_waypoint = true;
+						break;
+					}
+				}
+
+				if (!found_waypoint) {
+					ai_info.distance_to_next_waypoint = 999.0f;
+				}
+
+				racers.push_back(ai_info);
+			}
+		}
+
+		leaderboard->UpdatePositions(racers);
+
+		leaderboard->Draw();
 	}
 
 	// Update AI vehicles

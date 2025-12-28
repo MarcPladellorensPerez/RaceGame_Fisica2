@@ -2,6 +2,7 @@
 
 #include "Globals.h"
 #include "Module.h"
+#include "Leaderboard.h"
 #include "p2Point.h"
 #include "raylib.h"
 #include <vector>
@@ -80,8 +81,11 @@ public:
 	// Vector IA Vehicles
 	std::vector<AIVehicle*> ai_vehicles;
 	std::vector<Texture2D> ai_car_textures;
-
+	
 	bool game_started;
+
+	//Leaderboard
+	Leaderboard* leaderboard;
 
 private:
 	void LoadMap(const char* map_path);
