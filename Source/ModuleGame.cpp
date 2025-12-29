@@ -21,7 +21,7 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 
 	// Start menu variables
 	show_menu = true;
-	menu_state = MenuState::START_MENU;
+	menu_state = MenuState::INTRO_ANIMATION;
 	start_menu_texture = { 0 };
 	level_select_texture = { 0 };
 	selected_player_car = { 0 };
@@ -32,6 +32,16 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	level2_music = { 0 };
 	level3_music = { 0 };
 	current_music = { 0 };
+
+	//Intro
+	intro_spritesheet = { 0 };
+	intro_frame_actual = 0;
+	intro_total_frames = 25;
+	intro_timer = 0.0f;
+	intro_frame_duration = 0.10f;
+	intro_frames_por_fila = 25;   
+	intro_frame_width = 1280;     
+	intro_frame_height = 720;
 
 	leaderboard = new Leaderboard();
 	character_select = new CharacterSelect();
@@ -56,6 +66,9 @@ bool ModuleGame::Start()
 	bool ret = true;
 
 	LOG("ModuleGame: Carregant recursos del mapa...");
+
+	// Load intro texture
+	intro_spritesheet = LoadTexture("Assets/Textures/UI/IntroAnimation.png");
 
 	// Load start menu texture
 	start_menu_texture = LoadTexture("Assets/Textures/UI/StartMenu.png");
@@ -163,8 +176,14 @@ bool ModuleGame::CleanUp()
 		leaderboard->CleanUp();
 	}
 
+	//Clean characters
 	if (character_select) {
 		character_select->CleanUp();
+	}
+
+	//Clean Intro
+	if (intro_spritesheet.id != 0) {
+		UnloadTexture(intro_spritesheet);
 	}
 
 	for (auto& tex : ai_car_textures) {
@@ -191,6 +210,49 @@ update_status ModuleGame::Update()
 	if (IsMusicReady(current_music) && IsMusicStreamPlaying(current_music))
 	{
 		UpdateMusicStream(current_music);
+	}
+
+	float dtt = GetFrameTime();
+	if (menu_state == MenuState::INTRO_ANIMATION)
+	{
+		intro_timer += dtt;
+
+		if (intro_timer >= intro_frame_duration) {
+			intro_timer = 0.0f;
+			intro_frame_actual++;
+
+			if (intro_frame_actual >= intro_total_frames) {
+				menu_state = MenuState::START_MENU;
+				intro_frame_actual = 0; 
+			}
+		}
+
+		ClearBackground(BLACK);
+
+		if (intro_spritesheet.id != 0) {
+			int columna = intro_frame_actual; 
+
+			Rectangle source = {
+				(float)(columna * intro_frame_width), 
+				0.0f,                                  
+				(float)intro_frame_width,              
+				(float)intro_frame_height             
+			};
+
+			Rectangle dest = {0.0f,0.0f,(float)SCREEN_WIDTH,  (float)SCREEN_HEIGHT  };
+
+			DrawTexturePro(intro_spritesheet, source, dest, { 0, 0 }, 0, WHITE);
+
+			if (App->physics->debug) {
+				DrawText(TextFormat("Frame: %d/%d", intro_frame_actual + 1, intro_total_frames),
+					10, 10, 20, WHITE);
+			}
+		}
+		else {
+			DrawText("Cargando intro...", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2, 20, WHITE);
+		}
+
+
 	}
 
 	// Show initial menu and wait for SPACE

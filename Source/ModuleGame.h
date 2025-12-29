@@ -39,6 +39,7 @@ struct Waypoint {
 };
 
 enum class MenuState {
+	INTRO_ANIMATION,
 	START_MENU,
 	LEVEL_SELECT,
 	CHARACTER_SELECT,
@@ -92,6 +93,17 @@ public:
 	//System Select Characters
 	CharacterSelect* character_select;
 	Texture2D selected_player_car;
+
+	//Intro
+	Texture2D intro_spritesheet;
+	int intro_frame_actual;
+	int intro_total_frames;
+	float intro_timer;
+	float intro_frame_duration;
+	int intro_frames_por_fila;
+	int intro_frame_width;
+	int intro_frame_height;
+
 
 private:
 	void LoadMap(const char* map_path);
