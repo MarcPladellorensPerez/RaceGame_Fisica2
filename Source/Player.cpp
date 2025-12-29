@@ -414,6 +414,7 @@ update_status ModulePlayer::Update()
 	bool is_turning = turning_left || turning_right;
 	bool handbrake_active = IsKeyDown(KEY_SPACE);
 
+	// Handbrake / Drift system
 	if (handbrake_active)
 	{
 		if (is_turning && !is_stopped)

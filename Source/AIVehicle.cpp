@@ -6,16 +6,19 @@
 #include <cmath>
 #include <algorithm>
 
+// Callback para Raycasts que ignora sensores y al propio coche
 class RayCastCallback : public b2RayCastCallback {
 public:
     bool hit;
     float fraction;
     bool isDynamic;
+    b2Body* selfBody;
 
-    RayCastCallback() : hit(false), fraction(1.0f), isDynamic(false) {}
+    RayCastCallback(b2Body* self) : hit(false), fraction(1.0f), isDynamic(false), selfBody(self) {}
 
     float ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float fraction) override {
-        if (fixture->IsSensor()) return -1.0f;
+        // Ignorar sensores y nuestro propio collider
+        if (fixture->IsSensor() || fixture->GetBody() == selfBody) return -1.0f;
 
         this->hit = true;
         this->fraction = fraction;
@@ -32,7 +35,7 @@ width(0), height(0), sensor_length(10.0f),
 wall_detected_center(false), wall_detected_left(false), wall_detected_right(false),
 is_car_center(false), is_car_left(false), is_car_right(false),
 dist_fraction_center(1.0f), waypoint_timer(0.0f),
-waypoint_offset(0, 0), currentTarget(0, 0), texture({ 0 }) {
+waypoint_offset(0, 0), currentTarget(0, 0), texture({ 0 }), drive_time(0.0f) {
 }
 
 AIVehicle::~AIVehicle() {}
@@ -45,6 +48,7 @@ void AIVehicle::Init(b2World* world, b2Vec2 position, Texture2D tex, int start_w
     active = true;
     is_maneuvering = false;
     waypoint_timer = 0.0f;
+    drive_time = 0.0f;
 
     float rx = ((rand() % 100) / 30.0f) - 1.5f;
     float ry = ((rand() % 100) / 30.0f) - 1.5f;
@@ -53,7 +57,7 @@ void AIVehicle::Init(b2World* world, b2Vec2 position, Texture2D tex, int start_w
     b2BodyDef bodyDef;
     bodyDef.type = b2_dynamicBody;
     bodyDef.position = position;
-    bodyDef.linearDamping = 2.5f;
+    bodyDef.linearDamping = 0.5f;
     bodyDef.angularDamping = 5.0f;
 
     body = world->CreateBody(&bodyDef);
@@ -78,13 +82,17 @@ void AIVehicle::RaycastSensors() {
     b2Vec2 forward = body->GetWorldVector(b2Vec2(0.0f, -1.0f));
     b2Vec2 right = body->GetWorldVector(b2Vec2(1.0f, 0.0f));
 
-    b2Vec2 p1 = pos + 1.2f * forward;
+    // CAMBIO IMPORTANTE: Raycast desde el centro. 
+    // Al filtrar nuestro cuerpo en el Callback, es seguro hacerlo desde dentro.
+    // Esto arregla que no detecten paredes si están muy pegados.
+    b2Vec2 p1 = pos;
 
     b2Vec2 p2_center = p1 + sensor_length * forward;
-    b2Vec2 p2_left = p1 + (sensor_length * 0.7f) * (forward - 0.5f * right);
-    b2Vec2 p2_right = p1 + (sensor_length * 0.7f) * (forward + 0.5f * right);
+    // Sensores laterales un poco más abiertos que antes para navegar mejor curvas
+    b2Vec2 p2_left = p1 + (sensor_length * 0.8f) * (forward - 0.5f * right);
+    b2Vec2 p2_right = p1 + (sensor_length * 0.8f) * (forward + 0.5f * right);
 
-    RayCastCallback cb;
+    RayCastCallback cb(body);
 
     cb.hit = false; cb.fraction = 1.0f; cb.isDynamic = false;
     world->RayCast(&cb, p1, p2_center);
@@ -101,43 +109,61 @@ void AIVehicle::RaycastSensors() {
     world->RayCast(&cb, p1, p2_right);
     wall_detected_right = cb.hit;
     is_car_right = cb.isDynamic;
+
+    // LÓGICA DE SALIDA LIMPIA:
+    // Si llevamos menos de 3 segundos conduciendo, ignoramos a los otros coches.
+    // Hacemos ver a la IA que no hay coches para que no intente esquivarlos en la salida.
+    if (drive_time < 3.0f) {
+        if (is_car_center) wall_detected_center = false;
+        if (is_car_left) wall_detected_left = false;
+        if (is_car_right) wall_detected_right = false;
+    }
 }
 
 void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
     if (!active || !body) return;
 
+    drive_time += dt;
     RaycastSensors();
+    float mass = body->GetMass();
+    float speed = body->GetLinearVelocity().Length();
 
-	// Maneuvering jam logic
+    // --- LÓGICA DE MANIOBRA (DESATASCO) ---
     if (is_maneuvering) {
         maneuver_timer += dt;
 
         b2Vec2 backward = body->GetWorldVector(b2Vec2(0.0f, 1.0f));
+        body->ApplyForceToCenter(4.0f * mass * backward, true);
 
-        body->ApplyForceToCenter(2.0f * backward, true);
+        // Girar solo si nos movemos un poco, para evitar vibración en sitio
+        if (speed > 0.1f) {
+            body->SetAngularVelocity(2.0f * turn_direction);
+        }
 
-        body->SetAngularVelocity(0.5f * turn_direction);
-
-        if (maneuver_timer > 0.8f) {
+        if (maneuver_timer > 1.2f) {
             is_maneuvering = false;
-            body->SetLinearVelocity(b2Vec2(0, 0));
+            body->SetAngularVelocity(0);
+            // Pequeño empujón extra para salir
+            b2Vec2 forward = body->GetWorldVector(b2Vec2(0.0f, -1.0f));
+            body->ApplyLinearImpulseToCenter(1.0f * mass * forward, true);
         }
         return;
     }
 
-    float speed = body->GetLinearVelocity().Length();
-
     bool hittingWall = wall_detected_center && !is_car_center;
-    bool reallyClose = dist_fraction_center < 0.1f;
+    bool reallyClose = dist_fraction_center < 0.15f;
 
-    if (hittingWall && reallyClose && speed < 0.2f) {
+    // Solo activamos marcha atrás si llevamos un rato jugando y estamos parados contra una pared
+    if (drive_time > 4.0f && hittingWall && reallyClose && speed < 0.5f) {
         is_maneuvering = true;
         maneuver_timer = 0.0f;
         if (wall_detected_left) turn_direction = -1.0f;
         else if (wall_detected_right) turn_direction = 1.0f;
         else turn_direction = (rand() % 2 == 0) ? 1.0f : -1.0f;
+        return;
     }
 
+    // --- BÚSQUEDA DE WAYPOINTS ---
     b2Vec2 targetPos(0, 0);
     bool found = false;
     for (const auto& wp : waypoints) {
@@ -154,7 +180,7 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
     waypoint_timer += dt;
     float distToTarget = (targetPos - body->GetPosition()).Length();
     bool reached = distToTarget < 8.0f;
-    bool stuckOnRoute = waypoint_timer > 8.0f;
+    bool stuckOnRoute = waypoint_timer > 5.0f;
 
     if (reached || stuckOnRoute) {
         for (const auto& wp : waypoints) {
@@ -174,6 +200,7 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
         }
     }
 
+    // --- CÁLCULO DE DIRECCIÓN Y EVASIÓN ---
     b2Vec2 desiredDir = targetPos - body->GetPosition();
     desiredDir.Normalize();
 
@@ -181,25 +208,21 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
     float avoidFactor = 0.0f;
 
     if (wall_detected_center) {
-        if (!is_car_center) {
-            avoidFactor += 4.0f * (1.0f - dist_fraction_center);
-            b2Vec2 right = body->GetWorldVector(b2Vec2(1.0f, 0.0f));
-            if (b2Dot(desiredDir, right) > 0) avoidDir += body->GetWorldVector(b2Vec2(1.0f, 0.5f));
-            else avoidDir += body->GetWorldVector(b2Vec2(-1.0f, 0.5f));
-        }
-        else {
-            avoidFactor += 0.5f;
-            avoidDir += body->GetWorldVector(b2Vec2(1.0f, 0.0f));
-        }
+        float multiplier = is_car_center ? 1.5f : 4.5f;
+        avoidFactor += multiplier * (1.0f - dist_fraction_center);
+
+        b2Vec2 right = body->GetWorldVector(b2Vec2(1.0f, 0.0f));
+        if (b2Dot(desiredDir, right) > 0) avoidDir += body->GetWorldVector(b2Vec2(1.0f, 0.5f));
+        else avoidDir += body->GetWorldVector(b2Vec2(-1.0f, 0.5f));
     }
 
     if (wall_detected_left && !is_car_left) {
-        avoidFactor += 2.0f;
-        avoidDir += body->GetWorldVector(b2Vec2(0.8f, 0.2f));
+        avoidFactor += 1.2f;
+        avoidDir += body->GetWorldVector(b2Vec2(0.6f, 0.2f));
     }
     if (wall_detected_right && !is_car_right) {
-        avoidFactor += 2.0f;
-        avoidDir += body->GetWorldVector(b2Vec2(-0.8f, 0.2f));
+        avoidFactor += 1.2f;
+        avoidDir += body->GetWorldVector(b2Vec2(-0.6f, 0.2f));
     }
 
     b2Vec2 finalDir = desiredDir;
@@ -209,6 +232,7 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
     }
     finalDir.Normalize();
 
+    // --- GIRO SUAVE Y REALISTA ---
     float desiredAngle = atan2f(finalDir.y, finalDir.x) + (b2_pi / 2.0f);
     float currentAngle = body->GetAngle();
     float angleDiff = desiredAngle - currentAngle;
@@ -216,30 +240,49 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
     while (angleDiff <= -b2_pi) angleDiff += 2 * b2_pi;
     while (angleDiff > b2_pi) angleDiff -= 2 * b2_pi;
 
-    body->SetAngularVelocity(angleDiff * 2.0f);
-
-    float maxSpeed = 5.0f;
-    float acceleration = 5.0f;
-
-    if (fabs(angleDiff) > 0.6f) acceleration *= 0.5f;
-    else if (wall_detected_center && !is_car_center && dist_fraction_center < 0.4f) {
-        acceleration *= 0.1f;
-        maxSpeed = 2.0f;
+    // CORRECCIÓN DE VIBRACIÓN:
+    // Calculamos un factor de giro basado en la velocidad.
+    // Si velocidad = 0, factor = 0. El coche NO gira si está parado.
+    float steerFactor = 0.0f;
+    if (speed > 0.5f) {
+        // Escala lineal: a 5 m/s gira al 100%, a 0.5 m/s gira poco
+        steerFactor = std::min(speed / 5.0f, 1.0f);
     }
-    else if (wall_detected_center && is_car_center) acceleration *= 0.9f;
+
+    // Si el ángulo es muy pequeño, zona muerta
+    if (fabs(angleDiff) < 0.05f) {
+        body->SetAngularVelocity(0);
+    }
+    else {
+        float turnSpeed = 5.0f;
+        float clampedDiff = std::max(-1.0f, std::min(1.0f, angleDiff));
+        // Aplicamos el factor de velocidad al giro
+        body->SetAngularVelocity(clampedDiff * turnSpeed * steerFactor);
+    }
+
+    // --- ACELERACIÓN ---
+    float maxSpeed = 14.0f;
+    float acceleration = 9.0f;
+
+    if (fabs(angleDiff) > 0.8f) acceleration *= 0.5f;
+    else if (wall_detected_center && !is_car_center && dist_fraction_center < 0.5f) {
+        acceleration *= 0.4f;
+        maxSpeed = 6.0f;
+    }
 
     if (speed < maxSpeed) {
         b2Vec2 forward = body->GetWorldVector(b2Vec2(0.0f, -1.0f));
         b2Vec2 force = forward;
-        force.x *= acceleration;
-        force.y *= acceleration;
+        force.x *= acceleration * mass;
+        force.y *= acceleration * mass;
         body->ApplyForceToCenter(force, true);
     }
 
+    // Friction lateral (Evitar derrapes infinitos)
     b2Vec2 rightNormal = body->GetWorldVector(b2Vec2(1.0f, 0.0f));
     b2Vec2 vel = body->GetLinearVelocity();
     float lateralSpeed = b2Dot(rightNormal, vel);
-    body->ApplyLinearImpulseToCenter(-2.0f * body->GetMass() * lateralSpeed * rightNormal, true);
+    body->ApplyLinearImpulseToCenter(-1.0f * mass * lateralSpeed * rightNormal, true);
 }
 
 void AIVehicle::Draw(bool debug) {
@@ -256,8 +299,10 @@ void AIVehicle::Draw(bool debug) {
     Vector2 origin = { width / 2.0f, height / 2.0f };
 
     Color color = WHITE;
-    if (is_maneuvering) color = RED;
-    else if (wall_detected_center && !is_car_center && dist_fraction_center < 0.3f) color = ORANGE;
+    if (debug) {
+        if (is_maneuvering) color = RED;
+        else if (wall_detected_center && !is_car_center && dist_fraction_center < 0.3f) color = ORANGE;
+    }
 
     DrawTexturePro(texture, source, dest, origin, angle, color);
 
@@ -268,12 +313,22 @@ void AIVehicle::Draw(bool debug) {
         DrawCircleLines((int)(METERS_TO_PIXELS(currentTarget.x) + camX), (int)(METERS_TO_PIXELS(currentTarget.y) + camY), 5.0f, BLUE);
 
         b2Vec2 forward = body->GetWorldVector(b2Vec2(0.0f, -1.0f));
-        b2Vec2 p1 = pos + 1.2f * forward;
-        b2Vec2 p2 = p1 + sensor_length * forward;
+        b2Vec2 right = body->GetWorldVector(b2Vec2(1.0f, 0.0f));
+
+        b2Vec2 p1 = pos; // Dibujar desde el centro
+        b2Vec2 p2_center = p1 + sensor_length * forward;
+        b2Vec2 p2_left = p1 + (sensor_length * 0.8f) * (forward - 0.5f * right);
+        b2Vec2 p2_right = p1 + (sensor_length * 0.8f) * (forward + 0.5f * right);
+
         Color cColor = GREEN;
         if (wall_detected_center) cColor = is_car_center ? YELLOW : RED;
+        DrawLine((int)(METERS_TO_PIXELS(p1.x) + camX), (int)(METERS_TO_PIXELS(p1.y) + camY),
+            (int)(METERS_TO_PIXELS(p2_center.x) + camX), (int)(METERS_TO_PIXELS(p2_center.y) + camY), cColor);
 
         DrawLine((int)(METERS_TO_PIXELS(p1.x) + camX), (int)(METERS_TO_PIXELS(p1.y) + camY),
-            (int)(METERS_TO_PIXELS(p2.x) + camX), (int)(METERS_TO_PIXELS(p2.y) + camY), cColor);
+            (int)(METERS_TO_PIXELS(p2_left.x) + camX), (int)(METERS_TO_PIXELS(p2_left.y) + camY), wall_detected_left ? RED : GREEN);
+
+        DrawLine((int)(METERS_TO_PIXELS(p1.x) + camX), (int)(METERS_TO_PIXELS(p1.y) + camY),
+            (int)(METERS_TO_PIXELS(p2_right.x) + camX), (int)(METERS_TO_PIXELS(p2_right.y) + camY), wall_detected_right ? RED : GREEN);
     }
 }

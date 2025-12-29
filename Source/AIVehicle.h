@@ -9,7 +9,6 @@
 #include "box2d/box2d.h"
 #pragma warning(pop)
 
-// Forward declaration
 struct Waypoint;
 
 class AIVehicle {
@@ -37,20 +36,22 @@ private:
     bool wall_detected_left;
     bool wall_detected_right;
 
-	// Identify other cars
     bool is_car_center;
     bool is_car_left;
     bool is_car_right;
 
     float dist_fraction_center;
 
-	// Logic for short maneuvers
+    // Logic for short maneuvers
     bool is_maneuvering;
     float maneuver_timer;
     float turn_direction;
 
-	// Navigation
+    // Navigation
     float waypoint_timer;
     b2Vec2 waypoint_offset;
     b2Vec2 currentTarget;
+
+    // NUEVO: Tiempo de conducción para evitar pánico en la salida
+    float drive_time;
 };
