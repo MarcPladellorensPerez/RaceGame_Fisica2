@@ -29,6 +29,7 @@ public:
 	void UpdateNitro(float dt);
 	void DrawNitroBar();
 	void DrawNitroEffects();
+	void OnCollision(PhysBody* bodyA, PhysBody* bodyB) override;
 
 public:
 	PhysBody* vehicle;
@@ -47,11 +48,15 @@ public:
 	float nitro_particle_timer;
 	struct NitroParticle
 	{
-		vec2f position;
-		vec2f velocity;
-		float lifetime;
-		float max_lifetime;
-		Color color;
+		vec2f position = { 0.0f, 0.0f };
+		vec2f velocity = { 0.0f, 0.0f };
+		float lifetime = 0.0f;
+		float max_lifetime = 0.0f;
+		Color color = WHITE;
 	};
 	std::vector<NitroParticle> nitro_particles;
+
+	unsigned int sfx_engine;
+	unsigned int sfx_crash;
+	unsigned int sfx_nitro;
 };

@@ -3,6 +3,7 @@
 #include "Player.h"
 #include "ModuleRender.h"
 #include "ModuleGame.h"
+#include "ModuleAudio.h" 
 #include <stdlib.h>
 #include <cmath>
 
@@ -22,6 +23,11 @@ ModulePlayer::ModulePlayer(Application* app, bool start_enabled) : Module(app, s
 	nitro_cooldown = NITRO_COOLDOWN_TIME;
 	nitro_cooldown_timer = 0.0f;
 	nitro_particle_timer = 0.0f;
+
+	// Initialize sound IDs
+	sfx_engine = 0;
+	sfx_crash = 0;
+	sfx_nitro = 0;
 }
 
 ModulePlayer::~ModulePlayer()
@@ -55,6 +61,7 @@ bool ModulePlayer::Start()
 		return false;
 	}
 
+	// Configure vehicle physics
 	vehicle->body->SetAngularDamping(3.0f);
 	vehicle->body->SetLinearDamping(1.5f);
 	vehicle->body->SetFixedRotation(false);
@@ -67,6 +74,15 @@ bool ModulePlayer::Start()
 		fixture->SetRestitution(0.1f);
 		vehicle->body->ResetMassData();
 	}
+
+	// Assign listener for collisions
+	vehicle->listener = this;
+
+	// Load sound effects
+	LOG("Loading player sounds...");
+	sfx_engine = App->audio->LoadFx("Assets/Audio/car/engine_loop.wav");
+	sfx_crash = App->audio->LoadFx("Assets/Audio/car/crash.wav");
+	sfx_nitro = App->audio->LoadFx("Assets/Audio/car/nitro.wav");
 
 	return true;
 }
@@ -122,11 +138,14 @@ void ModulePlayer::UpdateNitro(float dt)
 		}
 	}
 
-	// Activate nitro when N is pressed (only if fully charged and not on cooldown)
+	// Activate nitro when N is pressed
 	if (IsKeyPressed(KEY_N) && nitro_duration >= NITRO_MAX_DURATION && nitro_cooldown_timer <= 0.0f)
 	{
 		nitro_active = true;
 		nitro_timer = 0.0f;
+
+		// Play nitro sound
+		App->audio->PlayFx(sfx_nitro);
 	}
 
 	// Update nitro timer and deactivate when duration is reached
@@ -314,6 +333,10 @@ update_status ModulePlayer::Update()
 		// Keep vehicle stopped while in menu
 		vehicle->body->SetLinearVelocity(b2Vec2(0, 0));
 		vehicle->body->SetAngularVelocity(0);
+		// Stop engine sound if inside menu
+		if (App->audio->IsFxPlaying(sfx_engine)) {
+			App->audio->SetFxVolume(sfx_engine, 0.0f);
+		}
 		return UPDATE_CONTINUE;
 	}
 
@@ -338,6 +361,17 @@ update_status ModulePlayer::Update()
 
 	b2Vec2 velocity = vehicle->body->GetLinearVelocity();
 	float speed = velocity.Length();
+
+	if (!App->audio->IsFxPlaying(sfx_engine)) {
+		App->audio->PlayFx(sfx_engine, -1);
+	}
+
+	// Adjust pitch and volume based on speed
+	float pitch = 0.6f + (speed * 0.08f);
+	if (pitch > 2.0f) pitch = 2.0f;
+	App->audio->SetFxPitch(sfx_engine, pitch);
+	App->audio->SetFxVolume(sfx_engine, 0.5f);
+
 
 	b2Vec2 forward_vector = vehicle->body->GetWorldVector(b2Vec2(0.0f, -1.0f));
 	float forward_velocity = b2Dot(forward_vector, velocity);
@@ -380,7 +414,6 @@ update_status ModulePlayer::Update()
 	bool is_turning = turning_left || turning_right;
 	bool handbrake_active = IsKeyDown(KEY_SPACE);
 
-	// Handbrake / Drift system
 	if (handbrake_active)
 	{
 		if (is_turning && !is_stopped)
@@ -492,4 +525,25 @@ update_status ModulePlayer::Update()
 	}
 
 	return UPDATE_CONTINUE;
+}
+
+void ModulePlayer::OnCollision(PhysBody* bodyA, PhysBody* bodyB)
+{
+	// Detect strong collisions for sound
+	if (bodyA == vehicle && vehicle != nullptr && vehicle->body != nullptr)
+	{
+		float impact_speed = vehicle->body->GetLinearVelocity().Length();
+
+		// Minimum threshold to play crash sound
+		if (impact_speed > 2.0f)
+		{
+			float volume = impact_speed / 8.0f;
+			if (volume > 1.0f) volume = 1.0f;
+			if (volume < 0.2f) volume = 0.2f;
+
+			App->audio->SetFxVolume(sfx_crash, volume);
+			App->audio->SetFxPitch(sfx_crash, 0.8f + ((rand() % 40) / 100.0f));
+			App->audio->PlayFx(sfx_crash);
+		}
+	}
 }
