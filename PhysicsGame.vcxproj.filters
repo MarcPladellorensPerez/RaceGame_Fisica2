@@ -37,6 +37,9 @@
     <ClCompile Include="Source\Leaderboard.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
+    <ClCompile Include="Source\SelectCharacters.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source/p2Point.h">
@@ -76,6 +79,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="Source\Leaderboard.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SelectCharacters.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

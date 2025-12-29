@@ -3,6 +3,7 @@
 #include "Globals.h"
 #include "Module.h"
 #include "Leaderboard.h"
+#include "SelectCharacters.h"
 #include "p2Point.h"
 #include "raylib.h"
 #include <vector>
@@ -40,6 +41,7 @@ struct Waypoint {
 enum class MenuState {
 	START_MENU,
 	LEVEL_SELECT,
+	CHARACTER_SELECT,
 	PLAYING
 };
 
@@ -86,6 +88,10 @@ public:
 
 	//Leaderboard
 	Leaderboard* leaderboard;
+
+	//System Select Characters
+	CharacterSelect* character_select;
+	Texture2D selected_player_car;
 
 private:
 	void LoadMap(const char* map_path);

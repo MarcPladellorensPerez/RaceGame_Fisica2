@@ -24,6 +24,7 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	menu_state = MenuState::START_MENU;
 	start_menu_texture = { 0 };
 	level_select_texture = { 0 };
+	selected_player_car = { 0 };
 
 	// Initialize music structures
 	menu_music = { 0 };
@@ -33,17 +34,21 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	current_music = { 0 };
 
 	leaderboard = new Leaderboard();
+	character_select = new CharacterSelect();
 
 }
 
 ModuleGame::~ModuleGame()
 {
-
 	if (leaderboard) {
 		delete leaderboard;
 		leaderboard = nullptr;
 	}
 
+	if (character_select) {  
+		delete character_select;
+		character_select = nullptr;
+	}
 }
 
 bool ModuleGame::Start()
@@ -86,6 +91,10 @@ bool ModuleGame::Start()
 
 	if (leaderboard) {
 		leaderboard->Init();
+	}
+
+	if (character_select) {
+		character_select->Init();
 	}
 
 	// Load AI car textures
@@ -152,6 +161,10 @@ bool ModuleGame::CleanUp()
 	//Clean leaderboard
 	if (leaderboard) {
 		leaderboard->CleanUp();
+	}
+
+	if (character_select) {
+		character_select->CleanUp();
 	}
 
 	for (auto& tex : ai_car_textures) {
@@ -222,15 +235,40 @@ update_status ModuleGame::Update()
 			DrawText(subtitle, (SCREEN_WIDTH - subtitle_width) / 2, 300, 30, LIGHTGRAY);
 		}
 
-		// Transition to level select on space key press
+		// Transition to character select on space key press
 		if (IsKeyPressed(KEY_SPACE))
 		{
-			LOG("Transitioning to level select menu...");
-			menu_state = MenuState::LEVEL_SELECT;
+			LOG("Transitioning to character select...");
+			menu_state = MenuState::CHARACTER_SELECT;
+			if (character_select) {
+				character_select->Reset();
+			}
 		}
 
 		return UPDATE_CONTINUE;
 	}
+
+	if (menu_state == MenuState::CHARACTER_SELECT)
+	{
+		App->renderer->camera_x = 0;
+		App->renderer->camera_y = 0;
+
+		float dt = GetFrameTime();
+
+		if (character_select) {
+			character_select->Update(dt);
+			character_select->Draw();
+
+			if (character_select->IsConfirmed()) {
+				LOG("Character selected, moving to level select...");
+				selected_player_car = character_select->GetSelectedCarTexture();
+				menu_state = MenuState::LEVEL_SELECT;
+			}
+		}
+
+		return UPDATE_CONTINUE;
+	}
+
 
 	// Show level selection and wait for 1/2/3
 	if (menu_state == MenuState::LEVEL_SELECT)
@@ -565,6 +603,12 @@ void ModuleGame::CreateEnemiesAndPlayer()
 
 	// Assign first spawn to player
 	if (App->player != nullptr && App->player->vehicle != nullptr) {
+		if (selected_player_car.id != 0) {
+			if (App->player->vehicle_texture.id != 0) {
+				UnloadTexture(App->player->vehicle_texture);
+			}
+			App->player->vehicle_texture = selected_player_car;
+		}
 		App->player->SetPosition(spawn_points[0].x, spawn_points[0].y, -90.0f);
 		LOG("Player teleported to spawn: %.2f, %.2f", spawn_points[0].x, spawn_points[0].y);
 	}
