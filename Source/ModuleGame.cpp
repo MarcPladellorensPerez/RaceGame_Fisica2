@@ -43,6 +43,16 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	intro_frame_width = 1280;     
 	intro_frame_height = 720;
 
+	traffic_light_spritesheet = { 0 };
+	traffic_light_current_frame = 0;
+	traffic_light_total_frames = 6;
+	traffic_light_timer = 0.0f;
+	traffic_light_duration_per_light = 1.0f;
+	traffic_light_active = false;
+	race_can_start = false;
+	traffic_light_frame_width = 512;
+	traffic_light_frame_height = 352;
+
 	leaderboard = new Leaderboard();
 	character_select = new CharacterSelect();
 
@@ -69,6 +79,9 @@ bool ModuleGame::Start()
 
 	// Load intro texture
 	intro_spritesheet = LoadTexture("Assets/Textures/UI/IntroAnimation.png");
+
+	//Load traffic lights
+	traffic_light_spritesheet = LoadTexture("Assets/Textures/UI/trafficlight.png");
 
 	// Load start menu texture
 	start_menu_texture = LoadTexture("Assets/Textures/UI/StartMenu.png");
@@ -184,6 +197,12 @@ bool ModuleGame::CleanUp()
 	//Clean Intro
 	if (intro_spritesheet.id != 0) {
 		UnloadTexture(intro_spritesheet);
+	}
+
+	//Clean Traffic Lights
+	if (traffic_light_spritesheet.id != 0)
+	{
+		UnloadTexture(traffic_light_spritesheet);
 	}
 
 	for (auto& tex : ai_car_textures) {
@@ -396,6 +415,40 @@ update_status ModuleGame::Update()
 		return UPDATE_CONTINUE;
 	}
 
+	if (traffic_light_active)
+	{
+		traffic_light_timer += dtt;
+
+		if (traffic_light_timer >= traffic_light_duration_per_light)
+		{
+			traffic_light_timer = 0.0f;
+			traffic_light_current_frame++;
+
+			if (traffic_light_current_frame >= traffic_light_total_frames)
+			{
+				traffic_light_current_frame = 0;
+				traffic_light_timer = -0.3f;
+				traffic_light_active = false;
+				race_can_start = true;
+			}
+		}
+
+		if (App->player && App->player->vehicle && App->player->vehicle->body)
+		{
+			App->player->vehicle->body->SetLinearVelocity(b2Vec2(0, 0));
+			App->player->vehicle->body->SetAngularVelocity(0);
+		}
+
+		for (auto& ai : ai_vehicles)
+		{
+			if (ai && ai->body)
+			{
+				ai->body->SetLinearVelocity(b2Vec2(0, 0));
+				ai->body->SetAngularVelocity(0);
+			}
+		}
+	}
+
 	// Draw map tiles
 	int tile_size = 128;
 	int columns = 18;
@@ -486,9 +539,34 @@ update_status ModuleGame::Update()
 
 	// Update AI vehicles
 	float dt = GetFrameTime();
-	for (auto* vehicle : ai_vehicles) {
-		vehicle->Update(dt, waypoints);
-		vehicle->Draw(App->physics->debug);
+	if (race_can_start) {
+		for (auto* vehicle : ai_vehicles) {
+			vehicle->Update(dt, waypoints);
+			vehicle->Draw(App->physics->debug);
+		}
+	}
+	else {
+		for (auto* vehicle : ai_vehicles) {
+			vehicle->Draw(App->physics->debug);
+		}
+	}
+
+	if (traffic_light_active && traffic_light_spritesheet.id != 0)
+	{
+		int frame = traffic_light_current_frame;
+
+		Rectangle source = {
+			(float)(frame * traffic_light_frame_width),  
+			0.0f,                                        
+			(float)traffic_light_frame_width,           
+			(float)traffic_light_frame_height            
+		};
+
+		Rectangle dest = {
+			(SCREEN_WIDTH - traffic_light_frame_width) / 2.0f,100.0f,(float)traffic_light_frame_width,(float)traffic_light_frame_height
+		};
+
+		DrawTexturePro(traffic_light_spritesheet, source, dest, { 0, 0 }, 0, WHITE);
 	}
 
 	// Draw UI hint for returning to menu
@@ -504,6 +582,11 @@ void ModuleGame::StartGame(const char* map_path)
 	// Change to playing state
 	menu_state = MenuState::PLAYING;
 	show_menu = false;
+
+	traffic_light_active = true;
+	traffic_light_current_frame = 0;
+	traffic_light_timer = 0.0f;
+	race_can_start = false;
 
 	// Load selected map and its data
 	LoadMap(map_path);

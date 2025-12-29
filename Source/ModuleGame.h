@@ -104,6 +104,16 @@ public:
 	int intro_frame_width;
 	int intro_frame_height;
 
+	//Traffic Lights
+	Texture2D traffic_light_spritesheet;
+	int traffic_light_current_frame;
+	int traffic_light_total_frames;
+	float traffic_light_timer;
+	float traffic_light_duration_per_light;
+	bool traffic_light_active;
+	bool race_can_start;
+	int traffic_light_frame_width;
+	int traffic_light_frame_height;
 
 private:
 	void LoadMap(const char* map_path);
