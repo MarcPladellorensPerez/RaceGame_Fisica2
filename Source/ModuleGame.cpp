@@ -762,12 +762,30 @@ void ModuleGame::CreateEnemiesAndPlayer()
 	}
 
 	// Create AI vehicles at remaining spawn points
-	for (size_t i = 1; i < spawn_points.size(); ++i) {
+	std::vector<int> available_car_indices;
+	int num_textures = (int)ai_car_textures.size();
+
+	for (int i = 0; i < num_textures; ++i) {
+		available_car_indices.push_back(i);
+	}
+
+	std::shuffle(available_car_indices.begin(), available_car_indices.end(), g);
+
+	int car_index = 0;
+	int num_spawns = (int)spawn_points.size();
+
+	for (int i = 1; i < num_spawns; ++i) {
 		AIVehicle* newAI = new AIVehicle();
 
 		Texture2D tex;
-		if (!ai_car_textures.empty()) {
-			tex = ai_car_textures[rand() % ai_car_textures.size()];
+		if (!ai_car_textures.empty() && car_index < num_textures) {
+			int texture_idx = available_car_indices[car_index];
+			tex = ai_car_textures[texture_idx];
+			car_index++;
+
+			if (car_index >= num_textures) {
+				car_index = 0;
+			}
 		}
 		else {
 			tex = App->player->vehicle_texture;
@@ -779,7 +797,6 @@ void ModuleGame::CreateEnemiesAndPlayer()
 		newAI->Init(App->physics->GetWorld(), spawnPosMeters, tex, startWP);
 		ai_vehicles.push_back(newAI);
 
-		LOG("AIVehicle created at spawn %d", (int)i);
 	}
 }
 
