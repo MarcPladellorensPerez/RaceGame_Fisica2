@@ -23,6 +23,7 @@ public:
     b2Body* body;
     bool active;
     int current_waypoint_id;
+    int behavior_mode;
 
 private:
     void RaycastSensors();
@@ -30,7 +31,12 @@ private:
     Texture2D texture;
     float width, height;
 
-    // Sensors
+    static const int RAY_COUNT = 36; 
+    float sensor_readings[RAY_COUNT]; 
+    b2Vec2 sensor_vectors[RAY_COUNT]; 
+    bool ray_hit[RAY_COUNT];          
+
+    // Legacy logic variables (Mapped from LIDAR so your logic still works)
     float sensor_length;
     bool wall_detected_center;
     bool wall_detected_left;
@@ -42,7 +48,7 @@ private:
 
     float dist_fraction_center;
 
-    // Logic for short maneuvers
+    // Logic for short maneuvers (unstuck)
     bool is_maneuvering;
     float maneuver_timer;
     float turn_direction;
@@ -52,6 +58,6 @@ private:
     b2Vec2 waypoint_offset;
     b2Vec2 currentTarget;
 
-    // NUEVO: Tiempo de conducción para evitar pánico en la salida
+    // Drive time to avoid panic at the start
     float drive_time;
 };
