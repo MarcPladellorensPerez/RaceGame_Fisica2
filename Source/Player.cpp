@@ -141,7 +141,8 @@ void ModulePlayer::UpdateNitro(float dt)
 	}
 
 	// Activate nitro when N is pressed
-	if (IsKeyPressed(KEY_N) && nitro_duration >= NITRO_MAX_DURATION && nitro_cooldown_timer <= 0.0f)
+	// CORRECCIÓN: Añadimos "!nitro_active" para evitar reactivarlo mientras se usa
+	if (IsKeyPressed(KEY_N) && !nitro_active && nitro_duration >= NITRO_MAX_DURATION && nitro_cooldown_timer <= 0.0f)
 	{
 		nitro_active = true;
 		nitro_timer = 0.0f;
