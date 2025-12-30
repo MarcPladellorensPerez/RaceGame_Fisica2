@@ -33,9 +33,11 @@ void Leaderboard::CleanUp() {
 }
 
 float Leaderboard::CalculateTotalProgress(const RacerInfo& racer) {
+    const float WAYPOINT_WEIGHT = 10000.0f;
 
-    float progress = (float)racer.current_waypoint * 1000.0f;
+    float progress = (float)racer.current_waypoint * WAYPOINT_WEIGHT;
 
+    // Restamos la distancia (cuanto menor distancia, mejor progreso)
     progress -= racer.distance_to_next_waypoint;
 
     return progress;

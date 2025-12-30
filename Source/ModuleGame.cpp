@@ -56,6 +56,8 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	leaderboard = new Leaderboard();
 	character_select = new CharacterSelect();
 
+	player_current_waypoint = -1;
+	player_distance_to_waypoint = 999.0f;
 }
 
 ModuleGame::~ModuleGame()
@@ -476,6 +478,10 @@ update_status ModuleGame::Update()
 			leaderboard->SetVisible(!leaderboard->IsVisible());
 		}
 
+		
+			UpdatePlayerWaypoint();
+		
+
 		std::vector<RacerInfo> racers;
 
 		if (App->player->vehicle && App->player->vehicle->body) {
@@ -484,20 +490,11 @@ update_status ModuleGame::Update()
 			player_info.is_player = true;
 			player_info.body = App->player->vehicle->body;
 
-			player_info.current_waypoint = 0;
-
-			if (!waypoints.empty()) {
-				b2Vec2 player_pos = App->player->vehicle->body->GetPosition();
-				b2Vec2 waypoint_pos = waypoints[0].position;
-				b2Vec2 diff = waypoint_pos - player_pos;
-				player_info.distance_to_next_waypoint = diff.Length();
-			}
-			else {
-				player_info.distance_to_next_waypoint = 0.0f;
-			}
-
+			player_info.current_waypoint = player_current_waypoint;
+			player_info.distance_to_next_waypoint = player_distance_to_waypoint;
 			racers.push_back(player_info);
 		}
+
 
 		for (size_t i = 0; i < ai_vehicles.size(); ++i) {
 			AIVehicle* ai = ai_vehicles[i];
@@ -595,6 +592,30 @@ void ModuleGame::StartGame(const char* map_path)
 	CreateCollisionBodies();
 	CreateEnemiesAndPlayer();
 
+	player_current_waypoint = -1;
+	player_distance_to_waypoint = 999.0f;
+
+	if (!waypoints.empty() && App->player->vehicle && App->player->vehicle->body)
+	{
+		b2Vec2 player_pos = App->player->vehicle->body->GetPosition();
+		float min_distance = FLT_MAX;
+		int closest_waypoint = 0;
+
+		for (const auto& wp : waypoints)
+		{
+			b2Vec2 diff = wp.position - player_pos;
+			float distance = diff.Length();
+
+			if (distance < min_distance)
+			{
+				min_distance = distance;
+				closest_waypoint = wp.id;
+			}
+		}
+
+		player_current_waypoint = closest_waypoint;
+	}
+
 	// Reset player nitro to full charge when starting a new level
 	if (App->player)
 	{
@@ -624,6 +645,9 @@ void ModuleGame::ResetGame()
 		}
 	}
 	collision_bodies.clear();
+
+	player_current_waypoint = -1;
+	player_distance_to_waypoint = 999.0f;
 
 	// Clear game data
 	waypoints.clear();
@@ -761,6 +785,25 @@ void ModuleGame::CreateEnemiesAndPlayer()
 		LOG("ERROR: Player vehicle not ready during spawn assignment!");
 	}
 
+	int starting_waypoint = 0;
+	if (!waypoints.empty())
+	{
+		float min_dist = FLT_MAX;
+		b2Vec2 spawn_pos(PIXELS_TO_METERS(spawn_points[0].x), PIXELS_TO_METERS(spawn_points[0].y));
+
+		for (const auto& wp : waypoints)
+		{
+			b2Vec2 diff = wp.position - spawn_pos;
+			float dist = diff.Length();
+
+			if (dist < min_dist)
+			{
+				min_dist = dist;
+				starting_waypoint = wp.id;
+			}
+		}
+	}
+
 	// Create AI vehicles at remaining spawn points
 	std::vector<int> available_car_indices;
 	int num_textures = (int)ai_car_textures.size();
@@ -791,10 +834,9 @@ void ModuleGame::CreateEnemiesAndPlayer()
 			tex = App->player->vehicle_texture;
 		}
 
-		int startWP = rand() % 4;
 		b2Vec2 spawnPosMeters(PIXELS_TO_METERS(spawn_points[i].x), PIXELS_TO_METERS(spawn_points[i].y));
 
-		newAI->Init(App->physics->GetWorld(), spawnPosMeters, tex, startWP);
+		newAI->Init(App->physics->GetWorld(), spawnPosMeters, tex, starting_waypoint);
 		ai_vehicles.push_back(newAI);
 
 	}
@@ -1091,4 +1133,108 @@ void ModuleGame::StopCurrentMusic()
 		StopMusicStream(current_music);
 		LOG("Stopped background music");
 	}
+}
+
+void ModuleGame::UpdatePlayerWaypoint()
+{
+	if (!App->player->vehicle || !App->player->vehicle->body) return;
+	if (waypoints.empty()) return;
+
+	b2Vec2 player_pos = App->player->vehicle->body->GetPosition();
+
+	if (player_current_waypoint < 0)
+	{
+		float min_dist = FLT_MAX;
+		for (const auto& wp : waypoints)
+		{
+			b2Vec2 diff = wp.position - player_pos;
+			float dist = diff.Length();
+
+			if (dist < min_dist)
+			{
+				min_dist = dist;
+				player_current_waypoint = wp.id;
+			}
+		}
+	}
+
+	Waypoint* current_waypoint = nullptr;
+	for (auto& wp : waypoints)
+	{
+		if (wp.id == player_current_waypoint)
+		{
+			current_waypoint = &wp;
+			break;
+		}
+	}
+
+	if (!current_waypoint) return;
+
+	b2Vec2 diff = current_waypoint->position - player_pos;
+	player_distance_to_waypoint = diff.Length();
+	const float WAYPOINT_REACH_THRESHOLD = 8.0f;
+
+	if (player_distance_to_waypoint < WAYPOINT_REACH_THRESHOLD)
+	{
+		if (!current_waypoint->next_ids.empty())
+		{
+			if (current_waypoint->next_ids.size() == 1)
+			{
+				player_current_waypoint = current_waypoint->next_ids[0];
+			}
+			else
+			{
+				float min_dist = FLT_MAX;
+				int best_next = current_waypoint->next_ids[0];
+
+				for (int next_id : current_waypoint->next_ids)
+				{
+					for (const auto& wp : waypoints)
+					{
+						if (wp.id == next_id)
+						{
+							b2Vec2 next_diff = wp.position - player_pos;
+							float next_dist = next_diff.Length();
+
+							if (next_dist < min_dist)
+							{
+								min_dist = next_dist;
+								best_next = next_id;
+							}
+							break;
+						}
+					}
+				}
+
+				player_current_waypoint = best_next;
+			}
+		}
+	}
+	else
+	{
+		if (!current_waypoint->next_ids.empty())
+		{
+			for (int next_id : current_waypoint->next_ids)
+			{
+				for (const auto& wp : waypoints)
+				{
+					if (wp.id == next_id)
+					{
+						b2Vec2 next_diff = wp.position - player_pos;
+						float dist_to_next = next_diff.Length();
+
+						if (dist_to_next < player_distance_to_waypoint)
+						{
+							player_current_waypoint = next_id;
+							player_distance_to_waypoint = dist_to_next;
+							return;
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+
+
 }

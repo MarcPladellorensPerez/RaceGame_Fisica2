@@ -261,7 +261,7 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
     }
 
     // --- ACELERACIÓN ---
-    float maxSpeed = 14.0f;
+    float maxSpeed = 10.0f;
     float acceleration = 9.0f;
 
     if (fabs(angleDiff) > 0.8f) acceleration *= 0.5f;

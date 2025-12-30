@@ -115,6 +115,9 @@ public:
 	int traffic_light_frame_width;
 	int traffic_light_frame_height;
 
+	int player_current_waypoint;
+	float player_distance_to_waypoint;
+
 private:
 	void LoadMap(const char* map_path);
 	void LoadCollisions(const char* map_path);
@@ -123,6 +126,8 @@ private:
 	void CreateEnemiesAndPlayer();
 	void StartGame(const char* map_path);
 	void ResetGame();
+	void UpdatePlayerWaypoint();
 	void PlayBackgroundMusic(Music music);
 	void StopCurrentMusic();
+
 };
