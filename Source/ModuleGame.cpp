@@ -58,6 +58,9 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 
 	player_current_waypoint = -1;
 	player_distance_to_waypoint = 999.0f;
+
+	current_map_spawn_rotation = -90.0f; 
+
 }
 
 ModuleGame::~ModuleGame()
@@ -585,6 +588,16 @@ void ModuleGame::StartGame(const char* map_path)
 	traffic_light_timer = 0.0f;
 	race_can_start = false;
 
+	if (strstr(map_path, "RaceTrack.tmx") != nullptr) {
+		current_map_spawn_rotation = -90.0f; // Mapa 1: left
+	}
+	else if (strstr(map_path, "RaceTrack2.tmx") != nullptr) {
+		current_map_spawn_rotation = 180.0f; // Mapa 2: down
+	}
+	else if (strstr(map_path, "RaceTrack3.tmx") != nullptr) {
+		current_map_spawn_rotation = -90.0f; // Map 3: left
+	}
+
 	// Load selected map and its data
 	LoadMap(map_path);
 	LoadCollisions(map_path);
@@ -778,7 +791,7 @@ void ModuleGame::CreateEnemiesAndPlayer()
 			}
 			App->player->vehicle_texture = selected_player_car;
 		}
-		App->player->SetPosition(spawn_points[0].x, spawn_points[0].y, -90.0f);
+		App->player->SetPosition(spawn_points[0].x, spawn_points[0].y, current_map_spawn_rotation);
 		LOG("Player teleported to spawn: %.2f, %.2f", spawn_points[0].x, spawn_points[0].y);
 	}
 	else {
@@ -834,9 +847,12 @@ void ModuleGame::CreateEnemiesAndPlayer()
 			tex = App->player->vehicle_texture;
 		}
 
-		b2Vec2 spawnPosMeters(PIXELS_TO_METERS(spawn_points[i].x), PIXELS_TO_METERS(spawn_points[i].y));
+		int startWP = rand() % 4;
 
-		newAI->Init(App->physics->GetWorld(), spawnPosMeters, tex, starting_waypoint);
+		b2Vec2 spawnPosMeters(PIXELS_TO_METERS(spawn_points[i].x), PIXELS_TO_METERS(spawn_points[i].y));
+	
+		newAI->Init(App->physics->GetWorld(), spawnPosMeters, tex, startWP, current_map_spawn_rotation);
+
 		ai_vehicles.push_back(newAI);
 
 	}

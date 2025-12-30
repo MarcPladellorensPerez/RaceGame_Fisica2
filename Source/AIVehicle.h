@@ -16,7 +16,7 @@ public:
     AIVehicle();
     ~AIVehicle();
 
-    void Init(b2World* world, b2Vec2 position, Texture2D texture, int start_waypoint_id);
+    void Init(b2World* world, b2Vec2 position, Texture2D tex, int start_waypoint_id, float rotation_degrees = 0.0f);
     void Update(float dt, const std::vector<Waypoint>& waypoints);
     void Draw(bool debug);
 
