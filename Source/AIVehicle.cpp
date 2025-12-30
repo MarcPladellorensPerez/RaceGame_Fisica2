@@ -40,7 +40,7 @@ waypoint_offset(0, 0), currentTarget(0, 0), texture({ 0 }), drive_time(0.0f) {
 
 AIVehicle::~AIVehicle() {}
 
-void AIVehicle::Init(b2World* world, b2Vec2 position, Texture2D tex, int start_waypoint_id) {
+void AIVehicle::Init(b2World* world, b2Vec2 position, Texture2D tex, int start_waypoint_id, float rotation_degrees) {
     texture = tex;
     width = (float)texture.width;
     height = (float)texture.height;
@@ -58,6 +58,7 @@ void AIVehicle::Init(b2World* world, b2Vec2 position, Texture2D tex, int start_w
     bodyDef.type = b2_dynamicBody;
     bodyDef.position = position;
     bodyDef.linearDamping = 0.5f;
+    bodyDef.angle = rotation_degrees * DEG_TO_RAD;
     bodyDef.angularDamping = 5.0f;
 
     body = world->CreateBody(&bodyDef);
@@ -261,8 +262,8 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
     }
 
     // --- ACELERACIÓN ---
-    float maxSpeed = 10.0f;
-    float acceleration = 9.0f;
+    float maxSpeed = 9.0f;
+    float acceleration = 6.0f;
 
     if (fabs(angleDiff) > 0.8f) acceleration *= 0.5f;
     else if (wall_detected_center && !is_car_center && dist_fraction_center < 0.5f) {

@@ -118,6 +118,9 @@ public:
 	int player_current_waypoint;
 	float player_distance_to_waypoint;
 
+	float current_map_spawn_rotation;
+
+
 private:
 	void LoadMap(const char* map_path);
 	void LoadCollisions(const char* map_path);
