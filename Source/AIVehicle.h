@@ -23,6 +23,7 @@ public:
     b2Body* body;
     bool active;
     int current_waypoint_id;
+    int behavior_mode;
 
 private:
     void RaycastSensors();
@@ -52,6 +53,6 @@ private:
     b2Vec2 waypoint_offset;
     b2Vec2 currentTarget;
 
-    // NUEVO: Tiempo de conducción para evitar pánico en la salida
+    // Driving time to avoid panic at the start
     float drive_time;
 };
