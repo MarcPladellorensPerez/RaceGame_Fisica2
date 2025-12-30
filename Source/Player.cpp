@@ -348,7 +348,7 @@ update_status ModulePlayer::Update()
 
 	// Vehicle physics parameters
 	float acceleration = 25.0f;
-	float max_speed_forward = 10.0f;
+	float max_speed_forward = 15.0f;
 	float max_speed_reverse = 4.5f;
 	float base_turn_speed = 3.0f;
 	float drift_factor = 0.7f;
