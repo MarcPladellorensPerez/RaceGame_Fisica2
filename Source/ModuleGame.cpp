@@ -868,10 +868,14 @@ void ModuleGame::CreateEnemiesAndPlayer()
 	// Assign first spawn to player
 	if (App->player != nullptr && App->player->vehicle != nullptr) {
 		if (selected_player_car.id != 0) {
-			if (App->player->vehicle_texture.id != 0) {
-				UnloadTexture(App->player->vehicle_texture);
+			// Check if we already have this texture loaded to avoid unloading it
+			if (App->player->vehicle_texture.id != selected_player_car.id)
+			{
+				if (App->player->vehicle_texture.id != 0) {
+					UnloadTexture(App->player->vehicle_texture);
+				}
+				App->player->vehicle_texture = selected_player_car;
 			}
-			App->player->vehicle_texture = selected_player_car;
 		}
 		App->player->SetPosition(spawn_points[0].x, spawn_points[0].y, current_map_spawn_rotation);
 		LOG("Player teleported to spawn: %.2f, %.2f", spawn_points[0].x, spawn_points[0].y);
