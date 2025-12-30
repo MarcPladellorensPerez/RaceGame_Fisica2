@@ -24,6 +24,7 @@ public:
     bool active;
     int current_waypoint_id;
     int behavior_mode;
+    int laps = 1;
 
 private:
     void RaycastSensors();

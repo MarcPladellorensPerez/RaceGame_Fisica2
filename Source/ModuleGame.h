@@ -126,6 +126,13 @@ public:
 
 	//Background
 	Texture2D background_image;
+
+	const int TOTAL_LAPS = 1;
+	int current_lap;
+	bool race_finished;
+	bool player_has_won;
+	bool halfway_point_reached;
+
 private:
 	void LoadMap(const char* map_path);
 	void LoadCollisions(const char* map_path);

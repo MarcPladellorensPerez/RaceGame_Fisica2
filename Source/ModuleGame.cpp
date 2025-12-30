@@ -69,6 +69,12 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	current_map_spawn_rotation = -90.0f;
 
 	background_image = { 0 };
+
+	// Lap
+	current_lap = 1;
+	race_finished = false;
+	player_has_won = false;
+	halfway_point_reached = false;
 }
 
 ModuleGame::~ModuleGame()
@@ -88,7 +94,7 @@ bool ModuleGame::Start()
 {
 	bool ret = true;
 
-	LOG("ModuleGame: Carregant recursos del mapa...");
+	LOG("ModuleGame: Loading map resources...");
 
 	// Load intro texture
 	intro_spritesheet = LoadTexture("Assets/Textures/UI/IntroAnimation.png");
@@ -124,7 +130,7 @@ bool ModuleGame::Start()
 
 	if (tile_set.id == 0)
 	{
-		LOG("ERROR: No s'ha pogut carregar el tileset!");
+		LOG("ERROR: Could not load the tileset!");
 		return false;
 	}
 
@@ -166,14 +172,12 @@ bool ModuleGame::Start()
 	}
 
 	// Load Race FX
-	// NOTA: Asegúrate de que estos archivos existan o cambia la ruta
 	sfx_countdown = App->audio->LoadFx("Assets/Audio/fx/beep.wav");
 	sfx_start = App->audio->LoadFx("Assets/Audio/fx/go.wav");
 
 	// Start menu music
 	PlayBackgroundMusic(menu_music);
 
-	// Don't load map on start, wait for level selection
 	LOG("ModuleGame: Resources loaded, waiting for level selection.");
 
 	return ret;
@@ -188,54 +192,20 @@ bool ModuleGame::CleanUp()
 	if (IsMusicReady(level2_music)) UnloadMusicStream(level2_music);
 	if (IsMusicReady(level3_music)) UnloadMusicStream(level3_music);
 
-	// Clean start menu texture
-	if (start_menu_texture.id != 0)
-	{
-		UnloadTexture(start_menu_texture);
-	}
-
-	// Clean level select menu texture
-	if (level_select_texture.id != 0)
-	{
-		UnloadTexture(level_select_texture);
-	}
-
+	if (start_menu_texture.id != 0) UnloadTexture(start_menu_texture);
+	if (level_select_texture.id != 0) UnloadTexture(level_select_texture);
 	UnloadTexture(tile_set);
 
-	//Clean leaderboard
-	if (leaderboard) {
-		leaderboard->CleanUp();
-	}
+	if (leaderboard) leaderboard->CleanUp();
+	if (character_select) character_select->CleanUp();
+	if (intro_spritesheet.id != 0) UnloadTexture(intro_spritesheet);
+	if (traffic_light_spritesheet.id != 0) UnloadTexture(traffic_light_spritesheet);
+	if (background_image.id != 0) UnloadTexture(background_image);
 
-	//Clean characters
-	if (character_select) {
-		character_select->CleanUp();
-	}
-
-	//Clean Intro
-	if (intro_spritesheet.id != 0) {
-		UnloadTexture(intro_spritesheet);
-	}
-
-	//Clean Traffic Lights
-	if (traffic_light_spritesheet.id != 0)
-	{
-		UnloadTexture(traffic_light_spritesheet);
-	}
-
-	//Clean background
-	if (background_image.id != 0) {
-		UnloadTexture(background_image);
-	}
-
-	for (auto& tex : ai_car_textures) {
-		UnloadTexture(tex);
-	}
+	for (auto& tex : ai_car_textures) UnloadTexture(tex);
 	ai_car_textures.clear();
 
-	for (auto* vehicle : ai_vehicles) {
-		delete vehicle;
-	}
+	for (auto* vehicle : ai_vehicles) delete vehicle;
 	ai_vehicles.clear();
 
 	waypoints.clear();
@@ -273,80 +243,49 @@ update_status ModuleGame::Update()
 
 		if (intro_spritesheet.id != 0) {
 			int columna = intro_frame_actual;
-
-			Rectangle source = {
-				(float)(columna * intro_frame_width),
-				0.0f,
-				(float)intro_frame_width,
-				(float)intro_frame_height
-			};
-
+			Rectangle source = { (float)(columna * intro_frame_width), 0.0f, (float)intro_frame_width, (float)intro_frame_height };
 			Rectangle dest = { 0.0f,0.0f,(float)SCREEN_WIDTH,  (float)SCREEN_HEIGHT };
-
 			DrawTexturePro(intro_spritesheet, source, dest, { 0, 0 }, 0, WHITE);
-
-			if (App->physics->debug) {
-				DrawText(TextFormat("Frame: %d/%d", intro_frame_actual + 1, intro_total_frames),
-					10, 10, 20, WHITE);
-			}
 		}
 		else {
-			DrawText("Cargando intro...", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2, 20, WHITE);
+			DrawText("Loading intro...", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2, 20, WHITE);
 		}
-
-
 	}
 
 	// Show initial menu and wait for SPACE
 	if (menu_state == MenuState::START_MENU)
 	{
-		// Restart camera position
 		App->renderer->camera_x = 0;
 		App->renderer->camera_y = 0;
-
-		// Clear screen
 		ClearBackground(BLACK);
 
-		// Draw start menu
 		if (start_menu_texture.id != 0)
 		{
-			// Calculate scaling to fit screen while maintaining aspect ratio
 			float scale_x = (float)SCREEN_WIDTH / start_menu_texture.width;
 			float scale_y = (float)SCREEN_HEIGHT / start_menu_texture.height;
 			float scale = fminf(scale_x, scale_y);
-
 			int img_width = (int)(start_menu_texture.width * scale);
 			int img_height = (int)(start_menu_texture.height * scale);
 			int pos_x = (SCREEN_WIDTH - img_width) / 2;
 			int pos_y = (SCREEN_HEIGHT - img_height) / 2;
-
 			Rectangle source = { 0, 0, (float)start_menu_texture.width, (float)start_menu_texture.height };
 			Rectangle dest = { (float)pos_x, (float)pos_y, (float)img_width, (float)img_height };
-			Vector2 origin = { 0, 0 };
-
-			DrawTexturePro(start_menu_texture, source, dest, origin, 0.0f, WHITE);
+			DrawTexturePro(start_menu_texture, source, dest, { 0, 0 }, 0.0f, WHITE);
 		}
 		else
 		{
-			// Text menu fallback
 			const char* title = "RACING GAME";
 			const char* subtitle = "Physics II Project";
-
 			int title_width = MeasureText(title, 80);
 			int subtitle_width = MeasureText(subtitle, 30);
-
 			DrawText(title, (SCREEN_WIDTH - title_width) / 2, 200, 80, YELLOW);
 			DrawText(subtitle, (SCREEN_WIDTH - subtitle_width) / 2, 300, 30, LIGHTGRAY);
 		}
 
-		// Transition to character select on space key press
 		if (IsKeyPressed(KEY_SPACE))
 		{
-			LOG("Transitioning to character select...");
 			menu_state = MenuState::CHARACTER_SELECT;
-			if (character_select) {
-				character_select->Reset();
-			}
+			if (character_select) character_select->Reset();
 		}
 
 		return UPDATE_CONTINUE;
@@ -356,7 +295,6 @@ update_status ModuleGame::Update()
 	{
 		App->renderer->camera_x = 0;
 		App->renderer->camera_y = 0;
-
 		float dt = GetFrameTime();
 
 		if (character_select) {
@@ -364,7 +302,6 @@ update_status ModuleGame::Update()
 			character_select->Draw();
 
 			if (character_select->IsConfirmed()) {
-				LOG("Character selected, moving to level select...");
 				selected_player_car = character_select->GetSelectedCarTexture();
 				menu_state = MenuState::LEVEL_SELECT;
 			}
@@ -373,49 +310,35 @@ update_status ModuleGame::Update()
 		return UPDATE_CONTINUE;
 	}
 
-
-	// Show level selection and wait for 1/2/3
 	if (menu_state == MenuState::LEVEL_SELECT)
 	{
-		// Keep camera reset
 		App->renderer->camera_x = 0;
 		App->renderer->camera_y = 0;
-
 		ClearBackground(BLACK);
 
-		// Draw level select menu
 		if (level_select_texture.id != 0)
 		{
-			// Calculate scaling to fit screen while maintaining aspect ratio
 			float scale_x = (float)SCREEN_WIDTH / level_select_texture.width;
 			float scale_y = (float)SCREEN_HEIGHT / level_select_texture.height;
 			float scale = fminf(scale_x, scale_y);
-
 			int img_width = (int)(level_select_texture.width * scale);
 			int img_height = (int)(level_select_texture.height * scale);
 			int pos_x = (SCREEN_WIDTH - img_width) / 2;
 			int pos_y = (SCREEN_HEIGHT - img_height) / 2;
-
 			Rectangle source = { 0, 0, (float)level_select_texture.width, (float)level_select_texture.height };
 			Rectangle dest = { (float)pos_x, (float)pos_y, (float)img_width, (float)img_height };
-			Vector2 origin = { 0, 0 };
-
-			DrawTexturePro(level_select_texture, source, dest, origin, 0.0f, WHITE);
+			DrawTexturePro(level_select_texture, source, dest, { 0, 0 }, 0.0f, WHITE);
 		}
 
-		// Level selection input
-		if (IsKeyPressed(KEY_ONE))
-		{
+		if (IsKeyPressed(KEY_ONE)) {
 			StartGame("Assets/Map/RaceTrack.tmx");
 			PlayBackgroundMusic(level1_music);
 		}
-		else if (IsKeyPressed(KEY_TWO))
-		{
+		else if (IsKeyPressed(KEY_TWO)) {
 			StartGame("Assets/Map/RaceTrack2.tmx");
 			PlayBackgroundMusic(level2_music);
 		}
-		else if (IsKeyPressed(KEY_THREE))
-		{
+		else if (IsKeyPressed(KEY_THREE)) {
 			StartGame("Assets/Map/RaceTrack3.tmx");
 			PlayBackgroundMusic(level3_music);
 		}
@@ -423,13 +346,10 @@ update_status ModuleGame::Update()
 		return UPDATE_CONTINUE;
 	}
 
-	// Playing state
 	if (!game_started) return UPDATE_CONTINUE;
 
-	// Check if player wants to return to level select
 	if (IsKeyPressed(KEY_M))
 	{
-		LOG("Returning to level select menu...");
 		ResetGame();
 		menu_state = MenuState::LEVEL_SELECT;
 		show_menu = true;
@@ -438,23 +358,23 @@ update_status ModuleGame::Update()
 		return UPDATE_CONTINUE;
 	}
 
+	// Finish race and return to menu
+	if (race_finished) {
+		if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+			ResetGame();
+			menu_state = MenuState::LEVEL_SELECT;
+			show_menu = true;
+			game_started = false;
+			PlayBackgroundMusic(menu_music);
+			return UPDATE_CONTINUE;
+		}
+	}
+
 	if (background_image.id != 0) {
 		float camX = App->renderer->camera_x;
 		float camY = App->renderer->camera_y;
-
-		Rectangle source = {
-			0, 0,
-			(float)background_image.width,
-			(float)background_image.height
-		};
-
-		Rectangle dest = {
-			camX,
-			camY,
-			(float)background_image.width,
-			(float)background_image.height
-		};
-
+		Rectangle source = { 0, 0, (float)background_image.width, (float)background_image.height };
+		Rectangle dest = { camX, camY, (float)background_image.width, (float)background_image.height };
 		DrawTexturePro(background_image, source, dest, { 0, 0 }, 0, WHITE);
 	}
 
@@ -471,19 +391,13 @@ update_status ModuleGame::Update()
 				int gid = id - 1;
 				int tx = gid % columns;
 				int ty = gid / columns;
-
-				Rectangle source = {
-					(float)tx * tile_size,
-					(float)ty * tile_size,
-					(float)tile_size,
-					(float)tile_size
-				};
+				Rectangle source = { (float)tx * tile_size, (float)ty * tile_size, (float)tile_size, (float)tile_size };
 				App->renderer->Draw(tile_set, x * tile_size, y * tile_size, &source);
 			}
 		}
 	}
 
-	if (traffic_light_active)
+	if (!race_finished && traffic_light_active)
 	{
 		traffic_light_timer += dtt;
 
@@ -494,23 +408,18 @@ update_status ModuleGame::Update()
 
 			if (traffic_light_current_frame >= traffic_light_total_frames)
 			{
-				// Race starts now!
 				traffic_light_current_frame = 0;
 				traffic_light_timer = -0.3f;
 				traffic_light_active = false;
 				race_can_start = true;
-
-				// PLAY GO SOUND
 				App->audio->PlayFx(sfx_start);
 			}
 			else
 			{
-				// PLAY BEEP SOUND (on each light change)
 				App->audio->PlayFx(sfx_countdown);
 			}
 		}
 
-		// Stop physics while in traffic light
 		if (App->player && App->player->vehicle && App->player->vehicle->body)
 		{
 			App->player->vehicle->body->SetLinearVelocity(b2Vec2(0, 0));
@@ -538,22 +447,19 @@ update_status ModuleGame::Update()
 				int gid = id - 1;
 				int tx = gid % columns;
 				int ty = gid / columns;
-
 				Rectangle source = { (float)tx * tile_size, (float)ty * tile_size, (float)tile_size, (float)tile_size };
 				App->renderer->Draw(tile_set, x * tile_size, y * tile_size, &source);
 			}
 		}
 	}
 
-	if (menu_state == MenuState::PLAYING && game_started) {
+	if (menu_state == MenuState::PLAYING && game_started && !race_finished) {
 
 		if (IsKeyPressed(KEY_TAB)) {
 			leaderboard->SetVisible(!leaderboard->IsVisible());
 		}
 
-
 		UpdatePlayerWaypoint();
-
 
 		std::vector<RacerInfo> racers;
 
@@ -603,16 +509,22 @@ update_status ModuleGame::Update()
 		}
 
 		leaderboard->UpdatePositions(racers);
-
 		leaderboard->Draw();
 	}
 
 	// Update AI vehicles
 	float dt = GetFrameTime();
-	if (race_can_start) {
-		for (auto* vehicle : ai_vehicles) {
-			vehicle->Update(dt, waypoints);
-			vehicle->Draw(App->physics->debug);
+	if (!race_finished) {
+		if (race_can_start) {
+			for (auto* vehicle : ai_vehicles) {
+				vehicle->Update(dt, waypoints);
+				vehicle->Draw(App->physics->debug);
+			}
+		}
+		else {
+			for (auto* vehicle : ai_vehicles) {
+				vehicle->Draw(App->physics->debug);
+			}
 		}
 	}
 	else {
@@ -624,23 +536,41 @@ update_status ModuleGame::Update()
 	if (traffic_light_active && traffic_light_spritesheet.id != 0)
 	{
 		int frame = traffic_light_current_frame;
-
-		Rectangle source = {
-			(float)(frame * traffic_light_frame_width),
-			0.0f,
-			(float)traffic_light_frame_width,
-			(float)traffic_light_frame_height
-		};
-
-		Rectangle dest = {
-			(SCREEN_WIDTH - traffic_light_frame_width) / 2.0f,100.0f,(float)traffic_light_frame_width,(float)traffic_light_frame_height
-		};
-
+		Rectangle source = { (float)(frame * traffic_light_frame_width), 0.0f, (float)traffic_light_frame_width, (float)traffic_light_frame_height };
+		Rectangle dest = { (SCREEN_WIDTH - traffic_light_frame_width) / 2.0f,100.0f,(float)traffic_light_frame_width,(float)traffic_light_frame_height };
 		DrawTexturePro(traffic_light_spritesheet, source, dest, { 0, 0 }, 0, WHITE);
 	}
 
 	// Draw UI hint for returning to menu
 	DrawText("[M] Back to Level Select", 10, SCREEN_HEIGHT - 30, 20, WHITE);
+
+	// Draw lap interface
+	if (game_started && menu_state == MenuState::PLAYING)
+	{
+		// Checkpoint debug if F1 is pressed (debug physics)
+		if (App->physics->debug) {
+			DrawText(halfway_point_reached ? "CHECKPOINT: OK" : "CHECKPOINT: NO", 40, 70, 20, halfway_point_reached ? GREEN : RED);
+			DrawText(TextFormat("WP: %d", player_current_waypoint), 40, 90, 20, YELLOW);
+		}
+
+		if (race_finished)
+		{
+			DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Fade(BLACK, 0.7f));
+			if (player_has_won) {
+				const char* text = "YOU WIN!";
+				int textW = MeasureText(text, 100);
+				DrawText(text, (SCREEN_WIDTH - textW) / 2, SCREEN_HEIGHT / 2 - 50, 100, GOLD);
+			}
+			else {
+				const char* text = "YOU LOSE";
+				int textW = MeasureText(text, 100);
+				DrawText(text, (SCREEN_WIDTH - textW) / 2, SCREEN_HEIGHT / 2 - 50, 100, RED);
+			}
+			const char* subtext = "Press [ENTER] to continue";
+			int subW = MeasureText(subtext, 30);
+			DrawText(subtext, (SCREEN_WIDTH - subW) / 2, SCREEN_HEIGHT / 2 + 60, 30, LIGHTGRAY);
+		}
+	}
 
 	return UPDATE_CONTINUE;
 }
@@ -649,32 +579,28 @@ void ModuleGame::StartGame(const char* map_path)
 {
 	LOG("Starting game with map: %s", map_path);
 
-	// Change to playing state
 	menu_state = MenuState::PLAYING;
 	show_menu = false;
-
 	traffic_light_active = true;
 	traffic_light_current_frame = 0;
 	traffic_light_timer = 0.0f;
 	race_can_start = false;
 
 	if (strstr(map_path, "RaceTrack.tmx") != nullptr) {
-		current_map_spawn_rotation = -90.0f; // Mapa 1: left
-		background_image = LoadTexture("Assets/Map/background1.png");  // Track 1
+		current_map_spawn_rotation = -90.0f;
+		background_image = LoadTexture("Assets/Map/background1.png");
 
 	}
 	else if (strstr(map_path, "RaceTrack2.tmx") != nullptr) {
-		current_map_spawn_rotation = 180.0f; // Mapa 2: down
-		background_image = LoadTexture("Assets/Map/background2.png");  // Track 2 
+		current_map_spawn_rotation = 180.0f;
+		background_image = LoadTexture("Assets/Map/background2.png");
 
 	}
 	else if (strstr(map_path, "RaceTrack3.tmx") != nullptr) {
-		current_map_spawn_rotation = -90.0f; // Map 3: left
-		background_image = LoadTexture("Assets/Map/background3.png");  // Track 3 
-
+		current_map_spawn_rotation = -90.0f;
+		background_image = LoadTexture("Assets/Map/background3.png");
 	}
 
-	// Load selected map and its data
 	LoadMap(map_path);
 	LoadCollisions(map_path);
 	LoadMapObjects(map_path);
@@ -701,14 +627,22 @@ void ModuleGame::StartGame(const char* map_path)
 				closest_waypoint = wp.id;
 			}
 		}
-
 		player_current_waypoint = closest_waypoint;
 	}
 
-	// Reset player nitro to full charge when starting a new level
 	if (App->player)
 	{
 		App->player->ResetNitro();
+	}
+
+	// Reset
+	current_lap = 1;
+	race_finished = false;
+	player_has_won = false;
+	halfway_point_reached = false;
+
+	for (auto* ai : ai_vehicles) {
+		ai->laps = 1;
 	}
 
 	game_started = true;
@@ -716,7 +650,6 @@ void ModuleGame::StartGame(const char* map_path)
 
 void ModuleGame::ResetGame()
 {
-	// Clean up AI vehicles and their physics bodies
 	for (auto* vehicle : ai_vehicles) {
 		if (vehicle && vehicle->body) {
 			App->physics->GetWorld()->DestroyBody(vehicle->body);
@@ -726,7 +659,6 @@ void ModuleGame::ResetGame()
 	}
 	ai_vehicles.clear();
 
-	// Clean up collision bodies - only destroy Box2D body, PhysBody wrapper is deleted separately
 	for (auto* pbody : collision_bodies) {
 		if (pbody && pbody->body) {
 			App->physics->GetWorld()->DestroyBody(pbody->body);
@@ -735,7 +667,6 @@ void ModuleGame::ResetGame()
 	}
 	collision_bodies.clear();
 
-	//Clean up background
 	if (background_image.id != 0) {
 		UnloadTexture(background_image);
 		background_image = { 0 };
@@ -744,13 +675,11 @@ void ModuleGame::ResetGame()
 	player_current_waypoint = -1;
 	player_distance_to_waypoint = 999.0f;
 
-	// Clear game data
 	waypoints.clear();
 	spawn_points.clear();
 	map_data.clear();
 	collision_objects.clear();
 
-	// Reset player nitro when returning to menu
 	if (App->player)
 	{
 		App->player->ResetNitro();
@@ -860,15 +789,12 @@ void ModuleGame::CreateEnemiesAndPlayer()
 		return;
 	}
 
-	// Shuffle spawn points for random positioning
 	std::random_device rd;
 	std::mt19937 g(rd());
 	std::shuffle(spawn_points.begin(), spawn_points.end(), g);
 
-	// Assign first spawn to player
 	if (App->player != nullptr && App->player->vehicle != nullptr) {
 		if (selected_player_car.id != 0) {
-			// Check if we already have this texture loaded to avoid unloading it
 			if (App->player->vehicle_texture.id != selected_player_car.id)
 			{
 				if (App->player->vehicle_texture.id != 0) {
@@ -878,10 +804,6 @@ void ModuleGame::CreateEnemiesAndPlayer()
 			}
 		}
 		App->player->SetPosition(spawn_points[0].x, spawn_points[0].y, current_map_spawn_rotation);
-		LOG("Player teleported to spawn: %.2f, %.2f", spawn_points[0].x, spawn_points[0].y);
-	}
-	else {
-		LOG("ERROR: Player vehicle not ready during spawn assignment!");
 	}
 
 	int starting_waypoint = 0;
@@ -903,7 +825,6 @@ void ModuleGame::CreateEnemiesAndPlayer()
 		}
 	}
 
-	// Create AI vehicles at remaining spawn points
 	std::vector<int> available_car_indices;
 	int num_textures = (int)ai_car_textures.size();
 
@@ -938,9 +859,7 @@ void ModuleGame::CreateEnemiesAndPlayer()
 		b2Vec2 spawnPosMeters(PIXELS_TO_METERS(spawn_points[i].x), PIXELS_TO_METERS(spawn_points[i].y));
 
 		newAI->Init(App->physics->GetWorld(), spawnPosMeters, tex, startWP, current_map_spawn_rotation);
-
 		ai_vehicles.push_back(newAI);
-
 	}
 }
 
@@ -951,10 +870,8 @@ void ModuleGame::LoadMap(const char* map_path)
 	{
 		std::string line;
 		bool data_found = false;
-
 		map_width = 60;
 		map_height = 50;
-
 		while (std::getline(file, line))
 		{
 			if (line.find("<data encoding=\"csv\">") != std::string::npos)
@@ -962,10 +879,7 @@ void ModuleGame::LoadMap(const char* map_path)
 				data_found = true;
 				continue;
 			}
-			if (line.find("</data>") != std::string::npos)
-			{
-				break;
-			}
+			if (line.find("</data>") != std::string::npos) break;
 
 			if (data_found)
 			{
@@ -975,9 +889,7 @@ void ModuleGame::LoadMap(const char* map_path)
 				{
 					if (!value.empty() && value != "\n" && value != "\r")
 					{
-						try {
-							map_data.push_back(std::stoi(value));
-						}
+						try { map_data.push_back(std::stoi(value)); }
 						catch (...) {}
 					}
 				}
@@ -990,17 +902,11 @@ void ModuleGame::LoadMap(const char* map_path)
 void ModuleGame::LoadCollisions(const char* map_path)
 {
 	std::ifstream file(map_path);
-	if (!file.is_open())
-	{
-		LOG("ERROR: No s'ha pogut obrir el fitxer TMX per carregar col·lisions");
-		return;
-	}
+	if (!file.is_open()) return;
 
 	std::string line;
 	bool in_collisions_layer = false;
 	bool in_object = false;
-	bool in_polygon = false;
-
 	CollisionObject current_object;
 
 	while (std::getline(file, line))
@@ -1010,20 +916,17 @@ void ModuleGame::LoadCollisions(const char* map_path)
 			in_collisions_layer = true;
 			continue;
 		}
-
 		if (in_collisions_layer && line.find("</objectgroup>") != std::string::npos)
 		{
 			in_collisions_layer = false;
 			break;
 		}
-
 		if (!in_collisions_layer) continue;
 
 		if (line.find("<object") != std::string::npos)
 		{
 			in_object = true;
 			current_object = CollisionObject();
-
 			size_t name_pos = line.find("name=\"");
 			if (name_pos != std::string::npos)
 			{
@@ -1031,26 +934,20 @@ void ModuleGame::LoadCollisions(const char* map_path)
 				size_t name_end = line.find("\"", name_start);
 				current_object.name = line.substr(name_start, name_end - name_start);
 			}
-
 			size_t x_pos = line.find("x=\"");
 			if (x_pos != std::string::npos)
 			{
 				size_t x_start = x_pos + 3;
 				size_t x_end = line.find("\"", x_start);
-				try {
-					current_object.offset_x = (int)std::stof(line.substr(x_start, x_end - x_start));
-				}
+				try { current_object.offset_x = (int)std::stof(line.substr(x_start, x_end - x_start)); }
 				catch (...) {}
 			}
-
 			size_t y_pos = line.find("y=\"");
 			if (y_pos != std::string::npos)
 			{
 				size_t y_start = y_pos + 3;
 				size_t y_end = line.find("\"", y_start);
-				try {
-					current_object.offset_y = (int)std::stof(line.substr(y_start, y_end - y_start));
-				}
+				try { current_object.offset_y = (int)std::stof(line.substr(y_start, y_end - y_start)); }
 				catch (...) {}
 			}
 		}
@@ -1059,57 +956,40 @@ void ModuleGame::LoadCollisions(const char* map_path)
 		{
 			size_t name_pos = line.find("name=\"");
 			size_t value_pos = line.find("value=\"");
-
 			if (name_pos != std::string::npos && value_pos != std::string::npos)
 			{
 				size_t name_start = name_pos + 6;
 				size_t name_end = line.find("\"", name_start);
 				std::string prop_name = line.substr(name_start, name_end - name_start);
-
 				size_t value_start = value_pos + 7;
 				size_t value_end = line.find("\"", value_start);
 				std::string prop_value = line.substr(value_start, value_end - value_start);
-
-				if (prop_name == "collision_type")
-				{
-					current_object.collision_type = prop_value;
-				}
-				else if (prop_name == "type")
-				{
-					current_object.type = prop_value;
-				}
+				if (prop_name == "collision_type") current_object.collision_type = prop_value;
+				else if (prop_name == "type") current_object.type = prop_value;
 			}
 		}
 
 		if (in_object && line.find("<polygon") != std::string::npos)
 		{
-			in_polygon = true;
-
 			size_t points_pos = line.find("points=\"");
 			if (points_pos != std::string::npos)
 			{
 				size_t points_start = points_pos + 8;
 				size_t points_end = line.find("\"", points_start);
 				std::string points_str = line.substr(points_start, points_end - points_start);
-
 				std::stringstream ss(points_str);
 				std::string pair;
-
 				while (std::getline(ss, pair, ' '))
 				{
 					size_t comma_pos = pair.find(',');
 					if (comma_pos != std::string::npos)
 					{
-						try
-						{
+						try {
 							float x = std::stof(pair.substr(0, comma_pos));
 							float y = std::stof(pair.substr(comma_pos + 1));
 							current_object.points.push_back(vec2i((int)x, (int)y));
 						}
-						catch (...)
-						{
-							LOG("ERROR: No s'ha pogut parsejar punt: %s", pair.c_str());
-						}
+						catch (...) {}
 					}
 				}
 			}
@@ -1118,29 +998,23 @@ void ModuleGame::LoadCollisions(const char* map_path)
 		if (in_object && line.find("</object>") != std::string::npos)
 		{
 			in_object = false;
-			in_polygon = false;
-
 			if (!current_object.points.empty() && current_object.type == "wall_chain")
 			{
 				collision_objects.push_back(current_object);
 			}
 		}
 	}
-
 	file.close();
 }
 
 void ModuleGame::CreateCollisionBodies()
 {
 	const float MIN_DISTANCE_SQ = 1.0f;
-
 	for (const auto& collision : collision_objects)
 	{
 		if (collision.points.size() < 2) continue;
-
 		std::vector<vec2i> absolute_points;
 		absolute_points.reserve(collision.points.size());
-
 		for (size_t i = 0; i < collision.points.size(); ++i)
 		{
 			vec2i absolute_point(0, 0);
@@ -1148,11 +1022,7 @@ void ModuleGame::CreateCollisionBodies()
 			absolute_point.y = collision.points[i].y + collision.offset_y;
 			absolute_points.push_back(absolute_point);
 		}
-
-		if (collision.name == "Exterior")
-		{
-			std::reverse(absolute_points.begin(), absolute_points.end());
-		}
+		if (collision.name == "Exterior") std::reverse(absolute_points.begin(), absolute_points.end());
 
 		std::vector<vec2i> filtered_points;
 		filtered_points.push_back(absolute_points[0]);
@@ -1161,71 +1031,44 @@ void ModuleGame::CreateCollisionBodies()
 		{
 			const vec2i& current = absolute_points[i];
 			const vec2i& last_added = filtered_points.back();
-
 			int dx = current.x - last_added.x;
 			int dy = current.y - last_added.y;
 			float dist_sq = (float)(dx * dx + dy * dy);
-
-			if (dist_sq >= MIN_DISTANCE_SQ)
-			{
-				filtered_points.push_back(current);
-			}
+			if (dist_sq >= MIN_DISTANCE_SQ) filtered_points.push_back(current);
 		}
 
 		if (filtered_points.size() > 1)
 		{
 			const vec2i& first = filtered_points.front();
 			const vec2i& last = filtered_points.back();
-
 			int dx = first.x - last.x;
 			int dy = first.y - last.y;
 			float dist_sq = (float)(dx * dx + dy * dy);
-
-			if (dist_sq < MIN_DISTANCE_SQ)
-			{
-				filtered_points.pop_back();
-			}
+			if (dist_sq < MIN_DISTANCE_SQ) filtered_points.pop_back();
 		}
 
 		if (filtered_points.size() < 3) continue;
 
 		std::vector<int> points_array;
 		points_array.reserve(filtered_points.size() * 2);
-
 		for (size_t i = 0; i < filtered_points.size(); ++i)
 		{
 			points_array.push_back(filtered_points[i].x);
 			points_array.push_back(filtered_points[i].y);
 		}
 
-		PhysBody* body = App->physics->CreateChain(
-			0, 0,
-			points_array.data(),
-			(int)points_array.size(),
-			PhysBodyType::STATIC
-		);
-
-		if (body != nullptr)
-		{
-			collision_bodies.push_back(body);
-		}
+		PhysBody* body = App->physics->CreateChain(0, 0, points_array.data(), (int)points_array.size(), PhysBodyType::STATIC);
+		if (body != nullptr) collision_bodies.push_back(body);
 	}
 }
 
 void ModuleGame::PlayBackgroundMusic(Music music)
 {
-	// Stop current music if playing
 	StopCurrentMusic();
-
-	// Play new music
 	if (IsMusicReady(music)) {
 		current_music = music;
 		PlayMusicStream(current_music);
 		SetMusicVolume(current_music, 1.0f);
-		LOG("Playing background music");
-	}
-	else {
-		LOG("WARNING: Music not ready!");
 	}
 }
 
@@ -1233,7 +1076,6 @@ void ModuleGame::StopCurrentMusic()
 {
 	if (IsMusicReady(current_music) && IsMusicStreamPlaying(current_music)) {
 		StopMusicStream(current_music);
-		LOG("Stopped background music");
 	}
 }
 
@@ -1242,101 +1084,63 @@ void ModuleGame::UpdatePlayerWaypoint()
 	if (!App->player->vehicle || !App->player->vehicle->body) return;
 	if (waypoints.empty()) return;
 
+	int previous_waypoint = player_current_waypoint;
 	b2Vec2 player_pos = App->player->vehicle->body->GetPosition();
 
-	if (player_current_waypoint < 0)
-	{
-		float min_dist = FLT_MAX;
-		for (const auto& wp : waypoints)
-		{
-			b2Vec2 diff = wp.position - player_pos;
-			float dist = diff.Length();
+	// Update current waypoint to the closest one
+	float min_dist = FLT_MAX;
+	int closest_id = -1;
 
-			if (dist < min_dist)
-			{
-				min_dist = dist;
-				player_current_waypoint = wp.id;
-			}
+	for (const auto& wp : waypoints)
+	{
+		b2Vec2 diff = wp.position - player_pos;
+		float dist = diff.Length();
+
+		if (dist < min_dist)
+		{
+			min_dist = dist;
+			closest_id = wp.id;
 		}
 	}
 
-	Waypoint* current_waypoint = nullptr;
-	for (auto& wp : waypoints)
-	{
-		if (wp.id == player_current_waypoint)
-		{
-			current_waypoint = &wp;
-			break;
-		}
+	// Update current waypoint to the closest one
+	player_current_waypoint = closest_id;
+	player_distance_to_waypoint = min_dist;
+
+	// Lap logic
+	int max_id = 0;
+	for (const auto& wp : waypoints) {
+		if (wp.id > max_id) max_id = wp.id;
 	}
 
-	if (!current_waypoint) return;
-
-	b2Vec2 diff = current_waypoint->position - player_pos;
-	player_distance_to_waypoint = diff.Length();
-	const float WAYPOINT_REACH_THRESHOLD = 8.0f;
-
-	if (player_distance_to_waypoint < WAYPOINT_REACH_THRESHOLD)
-	{
-		if (!current_waypoint->next_ids.empty())
-		{
-			if (current_waypoint->next_ids.size() == 1)
-			{
-				player_current_waypoint = current_waypoint->next_ids[0];
-			}
-			else
-			{
-				float min_dist = FLT_MAX;
-				int best_next = current_waypoint->next_ids[0];
-
-				for (int next_id : current_waypoint->next_ids)
-				{
-					for (const auto& wp : waypoints)
-					{
-						if (wp.id == next_id)
-						{
-							b2Vec2 next_diff = wp.position - player_pos;
-							float next_dist = next_diff.Length();
-
-							if (next_dist < min_dist)
-							{
-								min_dist = next_dist;
-								best_next = next_id;
-							}
-							break;
-						}
-					}
-				}
-
-				player_current_waypoint = best_next;
-			}
-		}
+	// Detect if we pass the middle of the track
+	int mid_point = max_id / 2;
+	if (player_current_waypoint > (mid_point - 5) && player_current_waypoint < (mid_point + 5)) {
+		halfway_point_reached = true;
 	}
-	else
-	{
-		if (!current_waypoint->next_ids.empty())
-		{
-			for (int next_id : current_waypoint->next_ids)
-			{
-				for (const auto& wp : waypoints)
-				{
-					if (wp.id == next_id)
-					{
-						b2Vec2 next_diff = wp.position - player_pos;
-						float dist_to_next = next_diff.Length();
 
-						if (dist_to_next < player_distance_to_waypoint)
-						{
-							player_current_waypoint = next_id;
-							player_distance_to_waypoint = dist_to_next;
-							return;
-						}
+	// Detect crossing the finish line
+	if (previous_waypoint > (max_id * 0.8) && player_current_waypoint < (max_id * 0.2)) {
+		if (halfway_point_reached) {
+			current_lap++;
+			halfway_point_reached = false; 
+
+			// Race finish
+			if (current_lap > TOTAL_LAPS) {
+				race_finished = true;
+
+				// Victory logic
+				player_has_won = true;
+
+				// Check if any AI won before
+				for (auto* ai : ai_vehicles) {
+					if (ai->laps > TOTAL_LAPS) {
+						player_has_won = false;
 						break;
 					}
 				}
+				StopCurrentMusic();
 			}
 		}
 	}
-
-
 }

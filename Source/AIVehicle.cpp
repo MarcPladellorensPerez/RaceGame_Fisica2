@@ -36,7 +36,7 @@ width(0), height(0), sensor_length(3.0f),
 wall_detected_center(false), wall_detected_left(false), wall_detected_right(false),
 is_car_center(false), is_car_left(false), is_car_right(false),
 dist_fraction_center(1.0f), waypoint_timer(0.0f),
-waypoint_offset(0, 0), currentTarget(0, 0), texture({ 0 }), drive_time(0.0f), behavior_mode(0) {
+waypoint_offset(0, 0), currentTarget(0, 0), texture({ 0 }), drive_time(0.0f), behavior_mode(0), laps(1) {
 }
 
 AIVehicle::~AIVehicle() {}
@@ -50,6 +50,7 @@ void AIVehicle::Init(b2World* world, b2Vec2 position, Texture2D tex, int start_w
     is_maneuvering = false;
     waypoint_timer = 0.0f;
     drive_time = 0.0f;
+    laps = 1; // Reset laps
 
     // Assign random personality
     int rand_behavior = rand() % 100;
@@ -184,7 +185,13 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
         for (const auto& wp : waypoints) {
             if (wp.id == current_waypoint_id) {
                 if (!wp.next_ids.empty()) {
-                    current_waypoint_id = wp.next_ids[rand() % wp.next_ids.size()];
+                    int next = wp.next_ids[rand() % wp.next_ids.size()];
+
+                    if (next < current_waypoint_id && next < 3) {
+                        laps++;
+                    }
+
+                    current_waypoint_id = next;
                     waypoint_timer = 0.0f;
                     float rx = ((rand() % 100) / 30.0f) - 1.5f;
                     float ry = ((rand() % 100) / 30.0f) - 1.5f;
@@ -192,6 +199,7 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
                 }
                 else {
                     current_waypoint_id = 0;
+                    laps++; 
                 }
                 break;
             }
@@ -378,5 +386,8 @@ void AIVehicle::Draw(bool debug) {
         if (behavior_mode == 1) behaviorText = "AGR";
         if (behavior_mode == 2) behaviorText = "FEAR";
         DrawText(behaviorText, (int)(METERS_TO_PIXELS(pos.x) + camX), (int)(METERS_TO_PIXELS(pos.y) + camY), 10, WHITE);
+
+        // Debug laps
+        DrawText(TextFormat("L:%d", laps), (int)(METERS_TO_PIXELS(pos.x) + camX), (int)(METERS_TO_PIXELS(pos.y) + camY) - 10, 10, YELLOW);
     }
 }
