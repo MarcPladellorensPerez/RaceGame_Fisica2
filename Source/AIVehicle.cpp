@@ -31,7 +31,7 @@ public:
 
 AIVehicle::AIVehicle() : body(nullptr), active(false), current_waypoint_id(-1),
 is_maneuvering(false), maneuver_timer(0), turn_direction(0),
-width(0), height(0), sensor_length(10.0f),
+width(0), height(0), sensor_length(3.0f),
 wall_detected_center(false), wall_detected_left(false), wall_detected_right(false),
 is_car_center(false), is_car_left(false), is_car_right(false),
 dist_fraction_center(1.0f), waypoint_timer(0.0f),
@@ -201,7 +201,6 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
         }
     }
 
-    // --- CÁLCULO DE DIRECCIÓN Y EVASIÓN ---
     b2Vec2 desiredDir = targetPos - body->GetPosition();
     desiredDir.Normalize();
 
@@ -209,21 +208,34 @@ void AIVehicle::Update(float dt, const std::vector<Waypoint>& waypoints) {
     float avoidFactor = 0.0f;
 
     if (wall_detected_center) {
-        float multiplier = is_car_center ? 1.5f : 4.5f;
+        float multiplier = is_car_center ? 2.0f : 5.0f;
         avoidFactor += multiplier * (1.0f - dist_fraction_center);
 
         b2Vec2 right = body->GetWorldVector(b2Vec2(1.0f, 0.0f));
-        if (b2Dot(desiredDir, right) > 0) avoidDir += body->GetWorldVector(b2Vec2(1.0f, 0.5f));
-        else avoidDir += body->GetWorldVector(b2Vec2(-1.0f, 0.5f));
+
+        if (wall_detected_left && !wall_detected_right) {
+            avoidDir += body->GetWorldVector(b2Vec2(1.2f, 0.3f));
+        }
+        else if (wall_detected_right && !wall_detected_left) {
+            avoidDir += body->GetWorldVector(b2Vec2(-1.2f, 0.3f));
+        }
+        else {
+            if (b2Dot(desiredDir, right) > 0) {
+                avoidDir += body->GetWorldVector(b2Vec2(1.0f, 0.5f));
+            }
+            else {
+                avoidDir += body->GetWorldVector(b2Vec2(-1.0f, 0.5f));
+            }
+        }
     }
 
     if (wall_detected_left && !is_car_left) {
-        avoidFactor += 1.2f;
-        avoidDir += body->GetWorldVector(b2Vec2(0.6f, 0.2f));
+        avoidFactor += 1.5f;
+        avoidDir += body->GetWorldVector(b2Vec2(0.8f, 0.2f));
     }
     if (wall_detected_right && !is_car_right) {
-        avoidFactor += 1.2f;
-        avoidDir += body->GetWorldVector(b2Vec2(-0.6f, 0.2f));
+        avoidFactor += 1.5f;
+        avoidDir += body->GetWorldVector(b2Vec2(-0.8f, 0.2f));
     }
 
     b2Vec2 finalDir = desiredDir;

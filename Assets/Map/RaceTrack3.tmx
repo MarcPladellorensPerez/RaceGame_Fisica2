@@ -141,7 +141,7 @@
   <object id="39" name="Checkpoint0" x="4638.42" y="5355.66">
    <properties>
     <property name="checkpoint_id" type="int" value="0"/>
-    <property name="next_ids" value="1, 4, 5, 6"/>
+    <property name="next_ids" value="3,4,5"/>
     <property name="racing_line" value="center"/>
     <property name="speed_zone" value="normal"/>
    </properties>
@@ -150,7 +150,7 @@
   <object id="40" name="Checkpoint1" x="4204.86" y="5477.81">
    <properties>
     <property name="checkpoint_id" type="int" value="1"/>
-    <property name="next_ids" value="1, 4, 5, 6"/>
+    <property name="next_ids" value="2,4"/>
     <property name="racing_line" value="center"/>
     <property name="speed_zone" value="normal"/>
    </properties>
@@ -159,7 +159,7 @@
   <object id="41" name="Checkpoint2" x="3984.12" y="5588.88">
    <properties>
     <property name="checkpoint_id" type="int" value="2"/>
-    <property name="next_ids" value="1, 4, 5, 6"/>
+    <property name="next_ids" value="3,4,5,"/>
     <property name="racing_line" value="center"/>
     <property name="speed_zone" value="normal"/>
    </properties>
@@ -168,67 +168,67 @@
   <object id="42" name="Checkpoint3" x="3413.95" y="5473.51">
    <properties>
     <property name="checkpoint_id" type="int" value="3"/>
-    <property name="next_ids" value="1, 4, 5, 6"/>
+    <property name="next_ids" value="4,5"/>
     <property name="racing_line" value="center"/>
     <property name="speed_zone" value="normal"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="43" name="Checkpoint4" x="2230.73" y="5441.59">
+  <object id="43" name="Checkpoint4" x="2860.73" y="5489.59">
    <properties>
     <property name="checkpoint_id" type="int" value="4"/>
-    <property name="next_ids" value="7, 8, 9"/>
+    <property name="next_ids" value="5,6"/>
     <property name="racing_line" value="center"/>
     <property name="speed_zone" value="nitro"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="44" name="Checkpoint5" x="1884.83" y="5557.58">
+  <object id="44" name="Checkpoint5" x="2284.83" y="5639.58">
    <properties>
     <property name="checkpoint_id" type="int" value="5"/>
-    <property name="next_ids" value="7, 8, 9"/>
+    <property name="next_ids" value="6"/>
     <property name="racing_line" value="center"/>
     <property name="speed_zone" value="fast"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="45" name="Checkpoint6" x="1500" y="5646.92">
+  <object id="45" name="Checkpoint6" x="1486" y="5632.92">
    <properties>
     <property name="checkpoint_id" type="int" value="6"/>
-    <property name="next_ids" value="7, 8, 9"/>
+    <property name="next_ids" value="7"/>
     <property name="racing_line" value="center"/>
     <property name="speed_zone" value="fast"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="46" name="Checkpoint7" x="1045.08" y="5570.17">
+  <object id="46" name="Checkpoint7" x="881.08" y="5452.17">
    <properties>
     <property name="checkpoint_id" type="int" value="7"/>
-    <property name="next_ids" value="8, 9, 10"/>
+    <property name="next_ids" value="8,"/>
     <property name="racing_line" value="outer"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="47" name="Checkpoint8" x="1116.49" y="5306.42">
+  <object id="47" name="Checkpoint8" x="1106.49" y="5232.42">
    <properties>
     <property name="checkpoint_id" type="int" value="8"/>
-    <property name="next_ids" value="10, 11"/>
+    <property name="next_ids" value="9,10"/>
     <property name="racing_line" value="center"/>
     <property name="speed_zone" value="fast"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="48" name="Checkpoint9" x="1399.38" y="5182.13">
+  <object id="48" name="Checkpoint9" x="1413.38" y="5044.13">
    <properties>
     <property name="checkpoint_id" type="int" value="9"/>
-    <property name="next_ids" value="10, 11"/>
+    <property name="next_ids" value="10"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="50" name="Checkpoint10" x="1283.38" y="4955.13">
+  <object id="50" name="Checkpoint10" x="1791.38" y="4849.13">
    <properties>
     <property name="checkpoint_id" type="int" value="10"/>
     <property name="next_ids" value="11"/>
@@ -237,43 +237,43 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="51" name="Checkpoint11" x="1866" y="4734">
+  <object id="51" name="Checkpoint11" x="2156" y="4724">
    <properties>
     <property name="checkpoint_id" type="int" value="11"/>
-    <property name="next_ids" value="12, 13, 14"/>
+    <property name="next_ids" value="12"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="52" name="Checkpoint13" x="2482" y="4484">
+  <object id="52" name="Checkpoint13" x="2382" y="4222">
    <properties>
     <property name="checkpoint_id" type="int" value="13"/>
-    <property name="next_ids" value="15"/>
+    <property name="next_ids" value="14,15"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="53" name="Checkpoint14" x="2046" y="4174">
+  <object id="53" name="Checkpoint14" x="2030" y="3694">
    <properties>
     <property name="checkpoint_id" type="int" value="14"/>
-    <property name="next_ids" value="15"/>
+    <property name="next_ids" value="15,16"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="54" name="Checkpoint12" x="2272" y="4696">
+  <object id="54" name="Checkpoint12" x="2496" y="4536">
    <properties>
     <property name="checkpoint_id" type="int" value="12"/>
-    <property name="next_ids" value="15"/>
+    <property name="next_ids" value="13"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="55" name="Checkpoint15" x="2118" y="3778">
+  <object id="55" name="Checkpoint15" x="1728" y="3154">
    <properties>
     <property name="checkpoint_id" type="int" value="15"/>
     <property name="next_ids" value="16"/>
@@ -282,43 +282,43 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="56" name="Checkpoint16" x="1570" y="3054">
+  <object id="56" name="Checkpoint16" x="1436" y="2594">
    <properties>
     <property name="checkpoint_id" type="int" value="16"/>
-    <property name="next_ids" value="17, 18, 19"/>
+    <property name="next_ids" value="17, 18"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="57" name="Checkpoint17" x="1232" y="2306">
+  <object id="57" name="Checkpoint17" x="1126" y="2018">
    <properties>
     <property name="checkpoint_id" type="int" value="17"/>
-    <property name="next_ids" value="20, 21, 22"/>
+    <property name="next_ids" value="18"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="58" name="Checkpoint18" x="1218" y="1874">
+  <object id="58" name="Checkpoint18" x="854" y="1554">
    <properties>
     <property name="checkpoint_id" type="int" value="18"/>
-    <property name="next_ids" value="20, 21, 22"/>
+    <property name="next_ids" value="19"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="59" name="Checkpoint19" x="930" y="1420">
+  <object id="59" name="Checkpoint19" x="928" y="1020">
    <properties>
     <property name="checkpoint_id" type="int" value="19"/>
-    <property name="next_ids" value="20, 21, 22"/>
+    <property name="next_ids" value="20"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="61" name="Checkpoint22" x="1830" y="1100">
+  <object id="61" name="Checkpoint22" x="2134" y="1564">
    <properties>
     <property name="checkpoint_id" type="int" value="22"/>
     <property name="next_ids" value="23, 24, 25"/>
@@ -327,25 +327,25 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="62" name="Checkpoint21" x="1560" y="1266">
+  <object id="62" name="Checkpoint21" x="1998" y="1226">
    <properties>
     <property name="checkpoint_id" type="int" value="21"/>
-    <property name="next_ids" value="23, 24, 25"/>
+    <property name="next_ids" value="22,23,24"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="63" name="Checkpoint20" x="1234" y="1110">
+  <object id="63" name="Checkpoint20" x="1598" y="980">
    <properties>
     <property name="checkpoint_id" type="int" value="20"/>
-    <property name="next_ids" value="23, 24, 25"/>
+    <property name="next_ids" value="21"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="64" name="Checkpoint23" x="2052" y="1696">
+  <object id="64" name="Checkpoint23" x="2188" y="1852">
    <properties>
     <property name="checkpoint_id" type="int" value="23"/>
     <property name="next_ids" value="26"/>
@@ -354,16 +354,16 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="65" name="Checkpoint24" x="2352" y="1864">
+  <object id="65" name="Checkpoint24" x="2376" y="2208">
    <properties>
     <property name="checkpoint_id" type="int" value="24"/>
-    <property name="next_ids" value="26"/>
+    <property name="next_ids" value="25"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="66" name="Checkpoint25" x="2302" y="2252">
+  <object id="66" name="Checkpoint25" x="2524" y="2514">
    <properties>
     <property name="checkpoint_id" type="int" value="25"/>
     <property name="next_ids" value="26"/>
@@ -372,7 +372,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="67" name="Checkpoint26" x="2642" y="2416">
+  <object id="67" name="Checkpoint26" x="2730" y="2744">
    <properties>
     <property name="checkpoint_id" type="int" value="26"/>
     <property name="next_ids" value="27"/>
@@ -381,7 +381,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="68" name="Checkpoint27" x="2734" y="2804">
+  <object id="68" name="Checkpoint27" x="3080" y="2736">
    <properties>
     <property name="checkpoint_id" type="int" value="27"/>
     <property name="next_ids" value="28, 29"/>
@@ -390,16 +390,16 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="69" name="Checkpoint28" x="3118" y="2556">
+  <object id="69" name="Checkpoint28" x="3088" y="2454">
    <properties>
     <property name="checkpoint_id" type="int" value="28"/>
-    <property name="next_ids" value="30"/>
+    <property name="next_ids" value="29"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="70" name="Checkpoint29" x="2998" y="2226">
+  <object id="70" name="Checkpoint29" x="3040" y="2132">
    <properties>
     <property name="checkpoint_id" type="int" value="29"/>
     <property name="next_ids" value="30"/>
@@ -408,7 +408,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="73" name="Checkpoint30" x="2896" y="1976">
+  <object id="73" name="Checkpoint30" x="2872" y="1804">
    <properties>
     <property name="checkpoint_id" type="int" value="30"/>
     <property name="next_ids" value="31"/>
@@ -426,7 +426,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="75" name="Checkpoint32" x="2624" y="1308">
+  <object id="75" name="Checkpoint32" x="2564" y="1292">
    <properties>
     <property name="checkpoint_id" type="int" value="32"/>
     <property name="next_ids" value="33,34"/>
@@ -438,13 +438,13 @@
   <object id="76" name="Checkpoint33" x="2568" y="996">
    <properties>
     <property name="checkpoint_id" type="int" value="33"/>
-    <property name="next_ids" value="34,35"/>
+    <property name="next_ids" value="34"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="77" name="Checkpoint34" x="2594" y="752">
+  <object id="77" name="Checkpoint34" x="2444" y="584">
    <properties>
     <property name="checkpoint_id" type="int" value="34"/>
     <property name="next_ids" value="35,36"/>
@@ -453,25 +453,25 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="78" name="Checkpoint35" x="2856" y="672">
+  <object id="78" name="Checkpoint35" x="3058" y="264">
    <properties>
     <property name="checkpoint_id" type="int" value="35"/>
-    <property name="next_ids" value="36,37"/>
+    <property name="next_ids" value="36"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="79" name="Checkpoint36" x="3032" y="384">
+  <object id="79" name="Checkpoint36" x="3546" y="242">
    <properties>
     <property name="checkpoint_id" type="int" value="36"/>
-    <property name="next_ids" value="37,38"/>
+    <property name="next_ids" value="37"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="80" name="Checkpoint37" x="3688" y="592">
+  <object id="80" name="Checkpoint37" x="3958" y="594">
    <properties>
     <property name="checkpoint_id" type="int" value="37"/>
     <property name="next_ids" value="38,39"/>
@@ -480,10 +480,10 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="81" name="Checkpoint38" x="3848" y="936">
+  <object id="81" name="Checkpoint38" x="3868" y="1022">
    <properties>
     <property name="checkpoint_id" type="int" value="38"/>
-    <property name="next_ids" value="39,40"/>
+    <property name="next_ids" value="39"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
@@ -501,13 +501,13 @@
   <object id="83" name="Checkpoint40" x="4492" y="1652">
    <properties>
     <property name="checkpoint_id" type="int" value="40"/>
-    <property name="next_ids" value="41,42"/>
+    <property name="next_ids" value="41"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="84" name="Checkpoint41" x="4704" y="2000">
+  <object id="84" name="Checkpoint41" x="4784" y="1946">
    <properties>
     <property name="checkpoint_id" type="int" value="41"/>
     <property name="next_ids" value="42,43"/>
@@ -537,22 +537,22 @@
   <object id="87" name="Checkpoint44" x="4068" y="3232">
    <properties>
     <property name="checkpoint_id" type="int" value="44"/>
-    <property name="next_ids" value="45,46"/>
+    <property name="next_ids" value="45"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="88" name="Checkpoint45" x="3920" y="3612">
+  <object id="88" name="Checkpoint45" x="3780" y="3572">
    <properties>
     <property name="checkpoint_id" type="int" value="45"/>
-    <property name="next_ids" value="46,47"/>
+    <property name="next_ids" value="46"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="89" name="Checkpoint46" x="3764" y="3944">
+  <object id="89" name="Checkpoint46" x="3594" y="4042">
    <properties>
     <property name="checkpoint_id" type="int" value="46"/>
     <property name="next_ids" value="47,48"/>
@@ -561,7 +561,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="90" name="Checkpoint47" x="3928" y="4108">
+  <object id="90" name="Checkpoint47" x="4138" y="4150">
    <properties>
     <property name="checkpoint_id" type="int" value="47"/>
     <property name="next_ids" value="48,49"/>
@@ -570,7 +570,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="91" name="Checkpoint48" x="4188" y="3964">
+  <object id="91" name="Checkpoint48" x="4670" y="4140">
    <properties>
     <property name="checkpoint_id" type="int" value="48"/>
     <property name="next_ids" value="49,50"/>
@@ -579,7 +579,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="92" name="Checkpoint49" x="4560" y="4088">
+  <object id="92" name="Checkpoint49" x="4716" y="3806">
    <properties>
     <property name="checkpoint_id" type="int" value="49"/>
     <property name="next_ids" value="50,51"/>
@@ -588,7 +588,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="93" name="Checkpoint50" x="4620" y="3820">
+  <object id="93" name="Checkpoint50" x="4824" y="3544">
    <properties>
     <property name="checkpoint_id" type="int" value="50"/>
     <property name="next_ids" value="51,52"/>
@@ -597,7 +597,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="94" name="Checkpoint51" x="4788" y="3567">
+  <object id="94" name="Checkpoint51" x="5038" y="3183">
    <properties>
     <property name="checkpoint_id" type="int" value="51"/>
     <property name="next_ids" value="52,53"/>
@@ -606,7 +606,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="95" name="Checkpoint52" x="4988" y="3240">
+  <object id="95" name="Checkpoint52" x="5186" y="2848">
    <properties>
     <property name="checkpoint_id" type="int" value="52"/>
     <property name="next_ids" value="53,54"/>
@@ -615,7 +615,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="96" name="Checkpoint53" x="5132" y="2928">
+  <object id="96" name="Checkpoint53" x="5346" y="2512">
    <properties>
     <property name="checkpoint_id" type="int" value="53"/>
     <property name="next_ids" value="54,55"/>
@@ -624,7 +624,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="97" name="Checkpoint54" x="5332" y="2488">
+  <object id="97" name="Checkpoint54" x="5500" y="2240">
    <properties>
     <property name="checkpoint_id" type="int" value="54"/>
     <property name="next_ids" value="55,56"/>
@@ -633,7 +633,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="98" name="Checkpoint55" x="5520" y="2040">
+  <object id="98" name="Checkpoint55" x="5612" y="1936">
    <properties>
     <property name="checkpoint_id" type="int" value="55"/>
     <property name="next_ids" value="56,57"/>
@@ -642,16 +642,16 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="99" name="Checkpoint56" x="5604" y="1704">
+  <object id="99" name="Checkpoint56" x="5642" y="1556">
    <properties>
     <property name="checkpoint_id" type="int" value="56"/>
-    <property name="next_ids" value="57,58"/>
+    <property name="next_ids" value="57"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="100" name="Checkpoint57" x="5604" y="1336">
+  <object id="100" name="Checkpoint57" x="5524" y="1079.33">
    <properties>
     <property name="checkpoint_id" type="int" value="57"/>
     <property name="next_ids" value="58,59"/>
@@ -660,16 +660,16 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="101" name="Checkpoint58" x="5824" y="1008">
+  <object id="101" name="Checkpoint58" x="6062" y="796.667">
    <properties>
     <property name="checkpoint_id" type="int" value="58"/>
-    <property name="next_ids" value="59,60"/>
+    <property name="next_ids" value="59"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="102" name="Checkpoint59" x="6404" y="788">
+  <object id="102" name="Checkpoint59" x="6444" y="612">
    <properties>
     <property name="checkpoint_id" type="int" value="59"/>
     <property name="next_ids" value="60,61"/>
@@ -678,7 +678,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="103" name="Checkpoint60" x="6752" y="904">
+  <object id="103" name="Checkpoint60" x="6916" y="754">
    <properties>
     <property name="checkpoint_id" type="int" value="60"/>
     <property name="next_ids" value="61,62"/>
@@ -687,7 +687,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="104" name="Checkpoint61" x="7084" y="896">
+  <object id="104" name="Checkpoint61" x="7254" y="968">
    <properties>
     <property name="checkpoint_id" type="int" value="61"/>
     <property name="next_ids" value="62,63"/>
@@ -696,7 +696,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="105" name="Checkpoint62" x="7252" y="1220">
+  <object id="105" name="Checkpoint62" x="7184" y="1234">
    <properties>
     <property name="checkpoint_id" type="int" value="62"/>
     <property name="next_ids" value="63,64"/>
@@ -705,7 +705,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="106" name="Checkpoint63" x="7052" y="1452">
+  <object id="106" name="Checkpoint63" x="7164" y="1548">
    <properties>
     <property name="checkpoint_id" type="int" value="63"/>
     <property name="next_ids" value="64,65"/>
@@ -714,7 +714,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="107" name="Checkpoint64" x="7228" y="1764">
+  <object id="107" name="Checkpoint64" x="7172" y="2044">
    <properties>
     <property name="checkpoint_id" type="int" value="64"/>
     <property name="next_ids" value="65,66"/>
@@ -723,7 +723,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="108" name="Checkpoint65" x="6948" y="2112">
+  <object id="108" name="Checkpoint65" x="6970" y="2302">
    <properties>
     <property name="checkpoint_id" type="int" value="65"/>
     <property name="next_ids" value="66,67"/>
@@ -732,7 +732,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="109" name="Checkpoint66" x="7016" y="2596">
+  <object id="109" name="Checkpoint66" x="6846" y="2636">
    <properties>
     <property name="checkpoint_id" type="int" value="66"/>
     <property name="next_ids" value="67,68"/>
@@ -741,7 +741,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="110" name="Checkpoint67" x="6564" y="2832">
+  <object id="110" name="Checkpoint67" x="6704" y="2956">
    <properties>
     <property name="checkpoint_id" type="int" value="67"/>
     <property name="next_ids" value="68,69"/>
@@ -750,7 +750,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="111" name="Checkpoint68" x="6712" y="3140">
+  <object id="111" name="Checkpoint68" x="6526" y="3264">
    <properties>
     <property name="checkpoint_id" type="int" value="68"/>
     <property name="next_ids" value="69,70"/>
@@ -759,7 +759,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="112" name="Checkpoint69" x="6304" y="3324">
+  <object id="112" name="Checkpoint69" x="6402" y="3506">
    <properties>
     <property name="checkpoint_id" type="int" value="69"/>
     <property name="next_ids" value="70,71"/>
@@ -768,25 +768,25 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="113" name="Checkpoint70" x="6480" y="3592">
+  <object id="113" name="Checkpoint70" x="6108" y="3788">
    <properties>
     <property name="checkpoint_id" type="int" value="70"/>
-    <property name="next_ids" value="71,72"/>
+    <property name="next_ids" value="71"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="114" name="Checkpoint71" x="6160" y="3808">
+  <object id="114" name="Checkpoint71" x="6014.67" y="4053.33">
    <properties>
     <property name="checkpoint_id" type="int" value="71"/>
-    <property name="next_ids" value="72,73"/>
+    <property name="next_ids" value="72"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="115" name="Checkpoint72" x="6376" y="4096">
+  <object id="115" name="Checkpoint72" x="6361.33" y="4223.33">
    <properties>
     <property name="checkpoint_id" type="int" value="72"/>
     <property name="next_ids" value="73,74"/>
@@ -795,7 +795,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="116" name="Checkpoint73" x="6280" y="4468">
+  <object id="116" name="Checkpoint73" x="6573.33" y="4466">
    <properties>
     <property name="checkpoint_id" type="int" value="73"/>
     <property name="next_ids" value="74,75"/>
@@ -804,7 +804,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="117" name="Checkpoint74" x="6656" y="4768">
+  <object id="117" name="Checkpoint74" x="6724" y="4721.33">
    <properties>
     <property name="checkpoint_id" type="int" value="74"/>
     <property name="next_ids" value="75,76"/>
@@ -813,25 +813,25 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="118" name="Checkpoint75" x="6540" y="5068">
+  <object id="118" name="Checkpoint75" x="6902" y="5099.33">
    <properties>
     <property name="checkpoint_id" type="int" value="75"/>
-    <property name="next_ids" value="76,77"/>
+    <property name="next_ids" value="76"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="119" name="Checkpoint76" x="6992" y="5408">
+  <object id="119" name="Checkpoint76" x="7038.67" y="5472">
    <properties>
     <property name="checkpoint_id" type="int" value="76"/>
-    <property name="next_ids" value="77,78"/>
+    <property name="next_ids" value="77"/>
     <property name="racing_line" value="inner"/>
     <property name="speed_zone" value="slow"/>
    </properties>
    <ellipse/>
   </object>
-  <object id="120" name="Checkpoint77" x="6564" y="5628">
+  <object id="120" name="Checkpoint77" x="6813.33" y="5709.33">
    <properties>
     <property name="checkpoint_id" type="int" value="77"/>
     <property name="next_ids" value="78,79"/>
@@ -840,7 +840,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="121" name="Checkpoint78" x="6304" y="5380">
+  <object id="121" name="Checkpoint78" x="6268" y="5448">
    <properties>
     <property name="checkpoint_id" type="int" value="78"/>
     <property name="next_ids" value="79,80"/>
@@ -849,7 +849,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="122" name="Checkpoint79" x="6004" y="5620">
+  <object id="122" name="Checkpoint79" x="5986" y="5590">
    <properties>
     <property name="checkpoint_id" type="int" value="79"/>
     <property name="next_ids" value="80,81"/>
@@ -858,7 +858,7 @@
    </properties>
    <ellipse/>
   </object>
-  <object id="123" name="Checkpoint80" x="5472" y="5352">
+  <object id="123" name="Checkpoint80" x="5580" y="5432">
    <properties>
     <property name="checkpoint_id" type="int" value="80"/>
     <property name="next_ids" value="81,0"/>
