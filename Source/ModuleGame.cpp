@@ -47,6 +47,7 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	intro_frame_width = 1280;
 	intro_frame_height = 720;
 
+	//Traffic lights
 	traffic_light_spritesheet = { 0 };
 	traffic_light_current_frame = 0;
 	traffic_light_total_frames = 6;
@@ -57,14 +58,17 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	traffic_light_frame_width = 512;
 	traffic_light_frame_height = 352;
 
+	//Leaderboard
 	leaderboard = new Leaderboard();
-	character_select = new CharacterSelect();
-
 	player_current_waypoint = -1;
 	player_distance_to_waypoint = 999.0f;
 
+	//Selection
+	character_select = new CharacterSelect();
+
 	current_map_spawn_rotation = -90.0f;
 
+	background_image = { 0 };
 }
 
 ModuleGame::~ModuleGame()
@@ -217,6 +221,11 @@ bool ModuleGame::CleanUp()
 	if (traffic_light_spritesheet.id != 0)
 	{
 		UnloadTexture(traffic_light_spritesheet);
+	}
+
+	//Clean background
+	if (background_image.id != 0) {
+		UnloadTexture(background_image);
 	}
 
 	for (auto& tex : ai_car_textures) {
@@ -429,6 +438,51 @@ update_status ModuleGame::Update()
 		return UPDATE_CONTINUE;
 	}
 
+	if (background_image.id != 0) {
+		float camX = App->renderer->camera_x;
+		float camY = App->renderer->camera_y;
+
+		Rectangle source = {
+			0, 0,
+			(float)background_image.width,
+			(float)background_image.height
+		};
+
+		Rectangle dest = {
+			camX,
+			camY,
+			(float)background_image.width,
+			(float)background_image.height
+		};
+
+		DrawTexturePro(background_image, source, dest, { 0, 0 }, 0, WHITE);
+	}
+
+	int tile_size = 128;
+	int columns = 18;
+
+	for (int y = 0; y < map_height; ++y)
+	{
+		for (int x = 0; x < map_width; ++x)
+		{
+			int id = map_data[y * map_width + x];
+			if (id > 0)
+			{
+				int gid = id - 1;
+				int tx = gid % columns;
+				int ty = gid / columns;
+
+				Rectangle source = {
+					(float)tx * tile_size,
+					(float)ty * tile_size,
+					(float)tile_size,
+					(float)tile_size
+				};
+				App->renderer->Draw(tile_set, x * tile_size, y * tile_size, &source);
+			}
+		}
+	}
+
 	if (traffic_light_active)
 	{
 		traffic_light_timer += dtt;
@@ -474,9 +528,6 @@ update_status ModuleGame::Update()
 	}
 
 	// Draw map tiles
-	int tile_size = 128;
-	int columns = 18;
-
 	for (int y = 0; y < map_height; ++y)
 	{
 		for (int x = 0; x < map_width; ++x)
@@ -609,12 +660,18 @@ void ModuleGame::StartGame(const char* map_path)
 
 	if (strstr(map_path, "RaceTrack.tmx") != nullptr) {
 		current_map_spawn_rotation = -90.0f; // Mapa 1: left
+		background_image = LoadTexture("Assets/Map/background1.png");  // Track 1
+
 	}
 	else if (strstr(map_path, "RaceTrack2.tmx") != nullptr) {
 		current_map_spawn_rotation = 180.0f; // Mapa 2: down
+		background_image = LoadTexture("Assets/Map/background2.png");  // Track 2 
+
 	}
 	else if (strstr(map_path, "RaceTrack3.tmx") != nullptr) {
 		current_map_spawn_rotation = -90.0f; // Map 3: left
+		background_image = LoadTexture("Assets/Map/background3.png");  // Track 3 
+
 	}
 
 	// Load selected map and its data
@@ -677,6 +734,12 @@ void ModuleGame::ResetGame()
 		}
 	}
 	collision_bodies.clear();
+
+	//Clean up background
+	if (background_image.id != 0) {
+		UnloadTexture(background_image);
+		background_image = { 0 };
+	}
 
 	player_current_waypoint = -1;
 	player_distance_to_waypoint = 999.0f;
