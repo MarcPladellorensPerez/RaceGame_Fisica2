@@ -124,7 +124,8 @@ public:
 
 	float current_map_spawn_rotation;
 
-
+	//Background
+	Texture2D background_image;
 private:
 	void LoadMap(const char* map_path);
 	void LoadCollisions(const char* map_path);
