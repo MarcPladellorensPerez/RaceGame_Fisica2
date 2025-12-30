@@ -42,7 +42,7 @@ public:
 	float nitro_cooldown;
 	float nitro_cooldown_timer;
 	const float NITRO_MAX_DURATION = 5.0f;
-	const float NITRO_COOLDOWN_TIME = 30.0f;
+	const float NITRO_COOLDOWN_TIME = 10.0f;
 
 	// Visual effects for nitro
 	float nitro_particle_timer;
