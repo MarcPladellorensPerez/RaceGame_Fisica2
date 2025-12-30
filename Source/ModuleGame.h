@@ -69,6 +69,10 @@ public:
 	Music level3_music;
 	Music current_music;
 
+	// Race SFX
+	unsigned int sfx_countdown;
+	unsigned int sfx_start;
+
 	Texture2D tile_set;
 	std::vector<int> map_data;
 	int map_width;
@@ -84,7 +88,7 @@ public:
 	// Vector IA Vehicles
 	std::vector<AIVehicle*> ai_vehicles;
 	std::vector<Texture2D> ai_car_textures;
-	
+
 	bool game_started;
 
 	//Leaderboard

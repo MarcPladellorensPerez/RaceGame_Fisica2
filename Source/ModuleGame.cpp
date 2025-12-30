@@ -33,14 +33,18 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	level3_music = { 0 };
 	current_music = { 0 };
 
+	// Initialize SFX
+	sfx_countdown = 0;
+	sfx_start = 0;
+
 	//Intro
 	intro_spritesheet = { 0 };
 	intro_frame_actual = 0;
 	intro_total_frames = 25;
 	intro_timer = 0.0f;
 	intro_frame_duration = 0.10f;
-	intro_frames_por_fila = 25;   
-	intro_frame_width = 1280;     
+	intro_frames_por_fila = 25;
+	intro_frame_width = 1280;
 	intro_frame_height = 720;
 
 	traffic_light_spritesheet = { 0 };
@@ -59,7 +63,7 @@ ModuleGame::ModuleGame(Application* app, bool start_enabled) : Module(app, start
 	player_current_waypoint = -1;
 	player_distance_to_waypoint = 999.0f;
 
-	current_map_spawn_rotation = -90.0f; 
+	current_map_spawn_rotation = -90.0f;
 
 }
 
@@ -70,7 +74,7 @@ ModuleGame::~ModuleGame()
 		leaderboard = nullptr;
 	}
 
-	if (character_select) {  
+	if (character_select) {
 		delete character_select;
 		character_select = nullptr;
 	}
@@ -156,6 +160,11 @@ bool ModuleGame::Start()
 	if (!IsMusicReady(level3_music)) {
 		LOG("WARNING: Could not load level 3 music");
 	}
+
+	// Load Race FX
+	// NOTA: Asegúrate de que estos archivos existan o cambia la ruta
+	sfx_countdown = App->audio->LoadFx("Assets/Audio/fx/beep.wav");
+	sfx_start = App->audio->LoadFx("Assets/Audio/fx/go.wav");
 
 	// Start menu music
 	PlayBackgroundMusic(menu_music);
@@ -247,23 +256,23 @@ update_status ModuleGame::Update()
 
 			if (intro_frame_actual >= intro_total_frames) {
 				menu_state = MenuState::START_MENU;
-				intro_frame_actual = 0; 
+				intro_frame_actual = 0;
 			}
 		}
 
 		ClearBackground(BLACK);
 
 		if (intro_spritesheet.id != 0) {
-			int columna = intro_frame_actual; 
+			int columna = intro_frame_actual;
 
 			Rectangle source = {
-				(float)(columna * intro_frame_width), 
-				0.0f,                                  
-				(float)intro_frame_width,              
-				(float)intro_frame_height             
+				(float)(columna * intro_frame_width),
+				0.0f,
+				(float)intro_frame_width,
+				(float)intro_frame_height
 			};
 
-			Rectangle dest = {0.0f,0.0f,(float)SCREEN_WIDTH,  (float)SCREEN_HEIGHT  };
+			Rectangle dest = { 0.0f,0.0f,(float)SCREEN_WIDTH,  (float)SCREEN_HEIGHT };
 
 			DrawTexturePro(intro_spritesheet, source, dest, { 0, 0 }, 0, WHITE);
 
@@ -431,13 +440,23 @@ update_status ModuleGame::Update()
 
 			if (traffic_light_current_frame >= traffic_light_total_frames)
 			{
+				// Race starts now!
 				traffic_light_current_frame = 0;
 				traffic_light_timer = -0.3f;
 				traffic_light_active = false;
 				race_can_start = true;
+
+				// PLAY GO SOUND
+				App->audio->PlayFx(sfx_start);
+			}
+			else
+			{
+				// PLAY BEEP SOUND (on each light change)
+				App->audio->PlayFx(sfx_countdown);
 			}
 		}
 
+		// Stop physics while in traffic light
 		if (App->player && App->player->vehicle && App->player->vehicle->body)
 		{
 			App->player->vehicle->body->SetLinearVelocity(b2Vec2(0, 0));
@@ -481,9 +500,9 @@ update_status ModuleGame::Update()
 			leaderboard->SetVisible(!leaderboard->IsVisible());
 		}
 
-		
-			UpdatePlayerWaypoint();
-		
+
+		UpdatePlayerWaypoint();
+
 
 		std::vector<RacerInfo> racers;
 
@@ -556,10 +575,10 @@ update_status ModuleGame::Update()
 		int frame = traffic_light_current_frame;
 
 		Rectangle source = {
-			(float)(frame * traffic_light_frame_width),  
-			0.0f,                                        
-			(float)traffic_light_frame_width,           
-			(float)traffic_light_frame_height            
+			(float)(frame * traffic_light_frame_width),
+			0.0f,
+			(float)traffic_light_frame_width,
+			(float)traffic_light_frame_height
 		};
 
 		Rectangle dest = {
@@ -850,7 +869,7 @@ void ModuleGame::CreateEnemiesAndPlayer()
 		int startWP = rand() % 4;
 
 		b2Vec2 spawnPosMeters(PIXELS_TO_METERS(spawn_points[i].x), PIXELS_TO_METERS(spawn_points[i].y));
-	
+
 		newAI->Init(App->physics->GetWorld(), spawnPosMeters, tex, startWP, current_map_spawn_rotation);
 
 		ai_vehicles.push_back(newAI);

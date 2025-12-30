@@ -59,4 +59,5 @@ public:
 	unsigned int sfx_engine;
 	unsigned int sfx_crash;
 	unsigned int sfx_nitro;
+	unsigned int sfx_drift;
 };

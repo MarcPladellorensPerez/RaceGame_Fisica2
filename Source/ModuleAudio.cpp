@@ -152,3 +152,12 @@ bool ModuleAudio::IsFxPlaying(unsigned int id)
 	}
 	return false;
 }
+
+// Stop a sound effect immediately
+void ModuleAudio::StopFx(unsigned int id)
+{
+	if (id > 0 && id <= fx_count)
+	{
+		StopSound(fx[id - 1]);
+	}
+}
