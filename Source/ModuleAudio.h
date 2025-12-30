@@ -25,6 +25,7 @@ public:
 	void SetFxPitch(unsigned int id, float pitch);
 	void SetFxVolume(unsigned int id, float volume);
 	bool IsFxPlaying(unsigned int id);
+	void StopFx(unsigned int id);
 
 public:
 	Music music;

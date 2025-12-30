@@ -12,13 +12,13 @@
 #pragma warning(pop)
 
 struct RacerInfo {
-    std::string name;
-    bool is_player;
-    int position;
-    b2Body* body;
-    int current_waypoint;
-    float distance_to_next_waypoint;
-    float total_progress; 
+    std::string name = "";
+    bool is_player = false;
+    int position = 0;
+    b2Body* body = nullptr;
+    int current_waypoint = 0;
+    float distance_to_next_waypoint = 0.0f;
+    float total_progress = 0.0f;
 };
 
 class Leaderboard {

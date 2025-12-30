@@ -28,6 +28,7 @@ ModulePlayer::ModulePlayer(Application* app, bool start_enabled) : Module(app, s
 	sfx_engine = 0;
 	sfx_crash = 0;
 	sfx_nitro = 0;
+	sfx_drift = 0;
 }
 
 ModulePlayer::~ModulePlayer()
@@ -83,6 +84,7 @@ bool ModulePlayer::Start()
 	sfx_engine = App->audio->LoadFx("Assets/Audio/car/engine_loop.wav");
 	sfx_crash = App->audio->LoadFx("Assets/Audio/car/crash.wav");
 	sfx_nitro = App->audio->LoadFx("Assets/Audio/car/nitro.wav");
+	sfx_drift = App->audio->LoadFx("Assets/Audio/car/drift.wav");
 
 	return true;
 }
@@ -494,6 +496,24 @@ update_status ModulePlayer::Update()
 		velocity.x *= max_speed_reverse;
 		velocity.y *= max_speed_reverse;
 		vehicle->body->SetLinearVelocity(velocity);
+	}
+
+	// Drift sound logic
+	bool is_drifting = handbrake_active && is_turning && !is_stopped;
+	if (is_drifting)
+	{
+		if (!App->audio->IsFxPlaying(sfx_drift))
+		{
+			App->audio->PlayFx(sfx_drift);
+		}
+
+		float drift_pitch = 0.8f + (speed / 15.0f);
+		if (drift_pitch > 1.2f) drift_pitch = 1.2f;
+		App->audio->SetFxPitch(sfx_drift, drift_pitch);
+	}
+	else
+	{
+		App->audio->StopFx(sfx_drift);
 	}
 
 	// Update camera to follow player
